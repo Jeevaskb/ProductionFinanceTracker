@@ -116,9 +116,29 @@ export class ExcelStorage implements IStorage {
     const filePath = path.join(this.dataDirectory, filename);
     try {
       await fs.access(filePath);
+      
+      // Try to read the file to check if it's valid
+      try {
+        await readExcelFile(filePath);
+      } catch (readError) {
+        // If reading fails, the file might be corrupted, recreate it
+        console.log(`Recreating possibly corrupted file: ${filename}`);
+        await writeExcelFile(filePath, [headers], "Sheet1");
+      }
     } catch (error) {
       // File doesn't exist, create it with headers
+      console.log(`Creating new Excel file: ${filename}`);
       await writeExcelFile(filePath, [headers], "Sheet1");
+      
+      // Verify the file was created properly
+      try {
+        await readExcelFile(filePath);
+      } catch (verifyError) {
+        console.error(`Failed to verify Excel file after creation: ${filename}`, verifyError);
+        // Try one more time with explicit directory creation
+        await ensureDirectoryExists(path.dirname(filePath));
+        await writeExcelFile(filePath, [headers], "Sheet1");
+      }
     }
   }
 
@@ -166,6 +186,7 @@ export class ExcelStorage implements IStorage {
     const newUnit: ProductionUnit = {
       ...unit,
       id: this.unitNextId++,
+      status: unit.status || "active", // Ensure status is not undefined
       costToDate: "0",
       createdAt: new Date()
     };
@@ -216,6 +237,7 @@ export class ExcelStorage implements IStorage {
     const newExpense: Expense = {
       ...expense,
       id: this.expenseNextId++,
+      date: expense.date || new Date(), // Ensure date is not undefined
     };
     
     expenses.push(newExpense);
@@ -299,6 +321,7 @@ export class ExcelStorage implements IStorage {
     const newRevenue: Revenue = {
       ...revenue,
       id: this.revenueNextId++,
+      date: revenue.date || new Date(), // Ensure date is not undefined
     };
     
     revenues.push(newRevenue);
@@ -347,6 +370,9 @@ export class ExcelStorage implements IStorage {
     const newItem: InventoryItem = {
       ...item,
       id: this.inventoryNextId++,
+      quantity: item.quantity || "0",
+      productionUnitId: item.productionUnitId || null,
+      description: item.description || null,
       createdAt: new Date(),
     };
     
@@ -1148,44 +1174,62 @@ export class ExcelStorage implements IStorage {
 
   private async readInventoryFromExcel(): Promise<InventoryItem[]> {
     const filePath = path.join(this.dataDirectory, "inventory.xlsx");
-    const data = await readExcelFile(filePath);
     
-    if (!data || data.length <= 1) {
+    try {
+      // Make sure directory exists
+      await ensureDirectoryExists(this.dataDirectory);
+      
+      // Check if file exists, create it if not
+      try {
+        await fs.access(filePath);
+      } catch (error) {
+        console.log("Creating inventory.xlsx file...");
+        await this.initializeExcelFile("inventory.xlsx", ["id", "name", "description", "quantity", "unitCost", "productionUnitId", "createdAt"]);
+        return []; // Return empty array since file was just created
+      }
+      
+      const data = await readExcelFile(filePath);
+      
+      if (!data || data.length <= 1) {
+        return [];
+      }
+      
+      const headers = data[0];
+      const idIndex = headers.indexOf("id");
+      const nameIndex = headers.indexOf("name");
+      const descriptionIndex = headers.indexOf("description");
+      const quantityIndex = headers.indexOf("quantity");
+      const unitCostIndex = headers.indexOf("unitCost");
+      const productionUnitIdIndex = headers.indexOf("productionUnitId");
+      const createdAtIndex = headers.indexOf("createdAt");
+      
+      const inventory: InventoryItem[] = [];
+      
+      for (let i = 1; i < data.length; i++) {
+        const row = data[i];
+        const id = parseInt(row[idIndex]);
+        
+        inventory.push({
+          id: id,
+          name: row[nameIndex],
+          description: descriptionIndex >= 0 ? row[descriptionIndex] : null,
+          quantity: row[quantityIndex] || "0",
+          unitCost: row[unitCostIndex] || "0",
+          productionUnitId: productionUnitIdIndex >= 0 && row[productionUnitIdIndex] ? parseInt(row[productionUnitIdIndex]) : null,
+          createdAt: createdAtIndex >= 0 && row[createdAtIndex] ? new Date(row[createdAtIndex]) : new Date(),
+        });
+        
+        // Update the next ID counter
+        if (id >= this.inventoryNextId) {
+          this.inventoryNextId = id + 1;
+        }
+      }
+      
+      return inventory;
+    } catch (error) {
+      console.error("Error reading inventory from Excel:", error);
       return [];
     }
-    
-    const headers = data[0];
-    const idIndex = headers.indexOf("id");
-    const nameIndex = headers.indexOf("name");
-    const descriptionIndex = headers.indexOf("description");
-    const quantityIndex = headers.indexOf("quantity");
-    const unitCostIndex = headers.indexOf("unitCost");
-    const productionUnitIdIndex = headers.indexOf("productionUnitId");
-    const createdAtIndex = headers.indexOf("createdAt");
-    
-    const inventory: InventoryItem[] = [];
-    
-    for (let i = 1; i < data.length; i++) {
-      const row = data[i];
-      const id = parseInt(row[idIndex]);
-      
-      inventory.push({
-        id: id,
-        name: row[nameIndex],
-        description: descriptionIndex >= 0 ? row[descriptionIndex] : null,
-        quantity: row[quantityIndex],
-        unitCost: row[unitCostIndex],
-        productionUnitId: productionUnitIdIndex >= 0 && row[productionUnitIdIndex] ? parseInt(row[productionUnitIdIndex]) : null,
-        createdAt: createdAtIndex >= 0 && row[createdAtIndex] ? new Date(row[createdAtIndex]) : new Date(),
-      });
-      
-      // Update the next ID counter
-      if (id >= this.inventoryNextId) {
-        this.inventoryNextId = id + 1;
-      }
-    }
-    
-    return inventory;
   }
 
   private async writeInventoryToExcel(inventory: InventoryItem[]): Promise<void> {
@@ -1207,40 +1251,58 @@ export class ExcelStorage implements IStorage {
 
   private async readReportsFromExcel(): Promise<Report[]> {
     const filePath = path.join(this.dataDirectory, "reports.xlsx");
-    const data = await readExcelFile(filePath);
     
-    if (!data || data.length <= 1) {
+    try {
+      // Make sure directory exists
+      await ensureDirectoryExists(this.dataDirectory);
+      
+      // Check if file exists, create it if not
+      try {
+        await fs.access(filePath);
+      } catch (error) {
+        console.log("Creating reports.xlsx file...");
+        await this.initializeExcelFile("reports.xlsx", ["id", "name", "type", "generatedAt", "filePath"]);
+        return []; // Return empty array since file was just created
+      }
+      
+      const data = await readExcelFile(filePath);
+      
+      if (!data || data.length <= 1) {
+        return [];
+      }
+      
+      const headers = data[0];
+      const idIndex = headers.indexOf("id");
+      const nameIndex = headers.indexOf("name");
+      const typeIndex = headers.indexOf("type");
+      const generatedAtIndex = headers.indexOf("generatedAt");
+      const filePathIndex = headers.indexOf("filePath");
+      
+      const reports: Report[] = [];
+      
+      for (let i = 1; i < data.length; i++) {
+        const row = data[i];
+        const id = parseInt(row[idIndex]);
+        
+        reports.push({
+          id: id,
+          name: row[nameIndex],
+          type: row[typeIndex],
+          generatedAt: row[generatedAtIndex] ? new Date(row[generatedAtIndex]) : new Date(),
+          filePath: row[filePathIndex],
+        });
+        
+        // Update the next ID counter
+        if (id >= this.reportNextId) {
+          this.reportNextId = id + 1;
+        }
+      }
+      
+      return reports;
+    } catch (error) {
+      console.error("Error reading reports from Excel:", error);
       return [];
     }
-    
-    const headers = data[0];
-    const idIndex = headers.indexOf("id");
-    const nameIndex = headers.indexOf("name");
-    const typeIndex = headers.indexOf("type");
-    const generatedAtIndex = headers.indexOf("generatedAt");
-    const filePathIndex = headers.indexOf("filePath");
-    
-    const reports: Report[] = [];
-    
-    for (let i = 1; i < data.length; i++) {
-      const row = data[i];
-      const id = parseInt(row[idIndex]);
-      
-      reports.push({
-        id: id,
-        name: row[nameIndex],
-        type: row[typeIndex],
-        generatedAt: row[generatedAtIndex] ? new Date(row[generatedAtIndex]) : new Date(),
-        filePath: row[filePathIndex],
-      });
-      
-      // Update the next ID counter
-      if (id >= this.reportNextId) {
-        this.reportNextId = id + 1;
-      }
-    }
-    
-    return reports;
   }
 
   private async writeReportsToExcel(reports: Report[]): Promise<void> {
@@ -1260,40 +1322,86 @@ export class ExcelStorage implements IStorage {
 
   private async readUsersFromExcel(): Promise<User[]> {
     const filePath = path.join(this.dataDirectory, "users.xlsx");
-    const data = await readExcelFile(filePath);
     
-    if (!data || data.length <= 1) {
-      return [];
-    }
-    
-    const headers = data[0];
-    const idIndex = headers.indexOf("id");
-    const usernameIndex = headers.indexOf("username");
-    const passwordIndex = headers.indexOf("password");
-    const nameIndex = headers.indexOf("name");
-    const roleIndex = headers.indexOf("role");
-    
-    const users: User[] = [];
-    
-    for (let i = 1; i < data.length; i++) {
-      const row = data[i];
-      const id = parseInt(row[idIndex]);
+    try {
+      // Make sure directory exists
+      await ensureDirectoryExists(this.dataDirectory);
       
-      users.push({
-        id: id,
-        username: row[usernameIndex],
-        password: row[passwordIndex],
-        name: row[nameIndex],
-        role: row[roleIndex],
-      });
-      
-      // Update the next ID counter
-      if (id >= this.userNextId) {
-        this.userNextId = id + 1;
+      // Check if file exists, create it if not
+      try {
+        await fs.access(filePath);
+      } catch (error) {
+        console.log("Creating users.xlsx file...");
+        await this.initializeExcelFile("users.xlsx", ["id", "username", "password", "name", "role"]);
+        
+        // Create a default admin user
+        const defaultUser: User = {
+          id: 1,
+          username: "admin",
+          password: "admin", // In a real app, this would be hashed
+          name: "Administrator",
+          role: "admin"
+        };
+        
+        await this.writeUsersToExcel([defaultUser]);
+        return [defaultUser]; // Return the default user
       }
+      
+      const data = await readExcelFile(filePath);
+      
+      if (!data || data.length <= 1) {
+        // Create a default admin user if the file is empty
+        const defaultUser: User = {
+          id: 1,
+          username: "admin",
+          password: "admin", // In a real app, this would be hashed
+          name: "Administrator",
+          role: "admin"
+        };
+        
+        await this.writeUsersToExcel([defaultUser]);
+        return [defaultUser];
+      }
+      
+      const headers = data[0];
+      const idIndex = headers.indexOf("id");
+      const usernameIndex = headers.indexOf("username");
+      const passwordIndex = headers.indexOf("password");
+      const nameIndex = headers.indexOf("name");
+      const roleIndex = headers.indexOf("role");
+      
+      const users: User[] = [];
+      
+      for (let i = 1; i < data.length; i++) {
+        const row = data[i];
+        const id = parseInt(row[idIndex]);
+        
+        users.push({
+          id: id,
+          username: row[usernameIndex],
+          password: row[passwordIndex],
+          name: row[nameIndex],
+          role: row[roleIndex],
+        });
+        
+        // Update the next ID counter
+        if (id >= this.userNextId) {
+          this.userNextId = id + 1;
+        }
+      }
+      
+      return users;
+    } catch (error) {
+      console.error("Error reading users from Excel:", error);
+      // Return a default admin user as fallback
+      return [{
+        id: 1,
+        username: "admin",
+        password: "admin",
+        name: "Administrator",
+        role: "admin"
+      }];
     }
-    
-    return users;
   }
 
   private async writeUsersToExcel(users: User[]): Promise<void> {
