@@ -532,6 +532,329 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Customer routes
+  app.get("/api/customers", async (req: Request, res: Response) => {
+    try {
+      const customers = await storage.getAllCustomers();
+      res.json(customers);
+    } catch (error) {
+      console.error("Error fetching customers:", error);
+      res.status(500).json({ message: "Failed to fetch customers" });
+    }
+  });
+
+  app.get("/api/customers/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const customer = await storage.getCustomer(id);
+      
+      if (!customer) {
+        return res.status(404).json({ message: "Customer not found" });
+      }
+      
+      res.json(customer);
+    } catch (error) {
+      console.error("Error fetching customer:", error);
+      res.status(500).json({ message: "Failed to fetch customer" });
+    }
+  });
+
+  app.post("/api/customers", async (req: Request, res: Response) => {
+    try {
+      const validation = insertCustomerSchema.safeParse(req.body);
+      
+      if (!validation.success) {
+        return res.status(400).json({ message: "Invalid customer data", errors: validation.error.format() });
+      }
+      
+      const newCustomer = await storage.createCustomer(validation.data);
+      res.status(201).json(newCustomer);
+    } catch (error) {
+      console.error("Error creating customer:", error);
+      res.status(500).json({ message: "Failed to create customer" });
+    }
+  });
+
+  app.put("/api/customers/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const validation = insertCustomerSchema.partial().safeParse(req.body);
+      
+      if (!validation.success) {
+        return res.status(400).json({ message: "Invalid customer data", errors: validation.error.format() });
+      }
+      
+      const updatedCustomer = await storage.updateCustomer(id, validation.data);
+      
+      if (!updatedCustomer) {
+        return res.status(404).json({ message: "Customer not found" });
+      }
+      
+      res.json(updatedCustomer);
+    } catch (error) {
+      console.error("Error updating customer:", error);
+      res.status(500).json({ message: "Failed to update customer" });
+    }
+  });
+
+  app.delete("/api/customers/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteCustomer(id);
+      
+      if (!success) {
+        return res.status(404).json({ message: "Customer not found or has associated orders" });
+      }
+      
+      res.status(204).end();
+    } catch (error) {
+      console.error("Error deleting customer:", error);
+      res.status(500).json({ message: "Failed to delete customer" });
+    }
+  });
+
+  // Order routes
+  app.get("/api/orders", async (req: Request, res: Response) => {
+    try {
+      const customerId = req.query.customerId ? parseInt(req.query.customerId as string) : undefined;
+      const productionUnitId = req.query.productionUnitId ? parseInt(req.query.productionUnitId as string) : undefined;
+      
+      let orders;
+      if (customerId) {
+        orders = await storage.getOrdersByCustomer(customerId);
+      } else if (productionUnitId) {
+        orders = await storage.getOrdersByProductionUnit(productionUnitId);
+      } else {
+        orders = await storage.getAllOrders();
+      }
+      
+      res.json(orders);
+    } catch (error) {
+      console.error("Error fetching orders:", error);
+      res.status(500).json({ message: "Failed to fetch orders" });
+    }
+  });
+
+  app.get("/api/orders/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const order = await storage.getOrder(id);
+      
+      if (!order) {
+        return res.status(404).json({ message: "Order not found" });
+      }
+      
+      res.json(order);
+    } catch (error) {
+      console.error("Error fetching order:", error);
+      res.status(500).json({ message: "Failed to fetch order" });
+    }
+  });
+
+  app.post("/api/orders", async (req: Request, res: Response) => {
+    try {
+      const validation = insertOrderSchema.safeParse(req.body);
+      
+      if (!validation.success) {
+        return res.status(400).json({ message: "Invalid order data", errors: validation.error.format() });
+      }
+      
+      const newOrder = await storage.createOrder(validation.data);
+      res.status(201).json(newOrder);
+    } catch (error) {
+      console.error("Error creating order:", error);
+      res.status(500).json({ message: "Failed to create order" });
+    }
+  });
+
+  app.put("/api/orders/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const validation = insertOrderSchema.partial().safeParse(req.body);
+      
+      if (!validation.success) {
+        return res.status(400).json({ message: "Invalid order data", errors: validation.error.format() });
+      }
+      
+      const updatedOrder = await storage.updateOrder(id, validation.data);
+      
+      if (!updatedOrder) {
+        return res.status(404).json({ message: "Order not found" });
+      }
+      
+      res.json(updatedOrder);
+    } catch (error) {
+      console.error("Error updating order:", error);
+      res.status(500).json({ message: "Failed to update order" });
+    }
+  });
+
+  app.delete("/api/orders/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteOrder(id);
+      
+      if (!success) {
+        return res.status(404).json({ message: "Order not found" });
+      }
+      
+      res.status(204).end();
+    } catch (error) {
+      console.error("Error deleting order:", error);
+      res.status(500).json({ message: "Failed to delete order" });
+    }
+  });
+
+  // Salary Payment routes
+  app.get("/api/salary-payments", async (req: Request, res: Response) => {
+    try {
+      const productionUnitId = req.query.productionUnitId ? parseInt(req.query.productionUnitId as string) : undefined;
+      const month = req.query.month as string;
+      const year = req.query.year as string;
+      
+      let payments;
+      if (productionUnitId) {
+        payments = await storage.getSalaryPaymentsByProductionUnit(productionUnitId);
+      } else if (month && year) {
+        payments = await storage.getSalaryPaymentsByMonth(month, year);
+      } else {
+        payments = await storage.getAllSalaryPayments();
+      }
+      
+      res.json(payments);
+    } catch (error) {
+      console.error("Error fetching salary payments:", error);
+      res.status(500).json({ message: "Failed to fetch salary payments" });
+    }
+  });
+
+  app.post("/api/salary-payments", async (req: Request, res: Response) => {
+    try {
+      const validation = insertSalaryPaymentSchema.safeParse(req.body);
+      
+      if (!validation.success) {
+        return res.status(400).json({ message: "Invalid salary payment data", errors: validation.error.format() });
+      }
+      
+      const newPayment = await storage.createSalaryPayment(validation.data);
+      res.status(201).json(newPayment);
+    } catch (error) {
+      console.error("Error creating salary payment:", error);
+      res.status(500).json({ message: "Failed to create salary payment" });
+    }
+  });
+
+  app.put("/api/salary-payments/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const validation = insertSalaryPaymentSchema.partial().safeParse(req.body);
+      
+      if (!validation.success) {
+        return res.status(400).json({ message: "Invalid salary payment data", errors: validation.error.format() });
+      }
+      
+      const updatedPayment = await storage.updateSalaryPayment(id, validation.data);
+      
+      if (!updatedPayment) {
+        return res.status(404).json({ message: "Salary payment not found" });
+      }
+      
+      res.json(updatedPayment);
+    } catch (error) {
+      console.error("Error updating salary payment:", error);
+      res.status(500).json({ message: "Failed to update salary payment" });
+    }
+  });
+
+  app.delete("/api/salary-payments/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteSalaryPayment(id);
+      
+      if (!success) {
+        return res.status(404).json({ message: "Salary payment not found" });
+      }
+      
+      res.status(204).end();
+    } catch (error) {
+      console.error("Error deleting salary payment:", error);
+      res.status(500).json({ message: "Failed to delete salary payment" });
+    }
+  });
+
+  // Maintenance Record routes
+  app.get("/api/maintenance-records", async (req: Request, res: Response) => {
+    try {
+      const productionUnitId = req.query.productionUnitId ? parseInt(req.query.productionUnitId as string) : undefined;
+      
+      let records;
+      if (productionUnitId) {
+        records = await storage.getMaintenanceRecordsByProductionUnit(productionUnitId);
+      } else {
+        records = await storage.getAllMaintenanceRecords();
+      }
+      
+      res.json(records);
+    } catch (error) {
+      console.error("Error fetching maintenance records:", error);
+      res.status(500).json({ message: "Failed to fetch maintenance records" });
+    }
+  });
+
+  app.post("/api/maintenance-records", async (req: Request, res: Response) => {
+    try {
+      const validation = insertMaintenanceRecordSchema.safeParse(req.body);
+      
+      if (!validation.success) {
+        return res.status(400).json({ message: "Invalid maintenance record data", errors: validation.error.format() });
+      }
+      
+      const newRecord = await storage.createMaintenanceRecord(validation.data);
+      res.status(201).json(newRecord);
+    } catch (error) {
+      console.error("Error creating maintenance record:", error);
+      res.status(500).json({ message: "Failed to create maintenance record" });
+    }
+  });
+
+  app.put("/api/maintenance-records/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const validation = insertMaintenanceRecordSchema.partial().safeParse(req.body);
+      
+      if (!validation.success) {
+        return res.status(400).json({ message: "Invalid maintenance record data", errors: validation.error.format() });
+      }
+      
+      const updatedRecord = await storage.updateMaintenanceRecord(id, validation.data);
+      
+      if (!updatedRecord) {
+        return res.status(404).json({ message: "Maintenance record not found" });
+      }
+      
+      res.json(updatedRecord);
+    } catch (error) {
+      console.error("Error updating maintenance record:", error);
+      res.status(500).json({ message: "Failed to update maintenance record" });
+    }
+  });
+
+  app.delete("/api/maintenance-records/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteMaintenanceRecord(id);
+      
+      if (!success) {
+        return res.status(404).json({ message: "Maintenance record not found" });
+      }
+      
+      res.status(204).end();
+    } catch (error) {
+      console.error("Error deleting maintenance record:", error);
+      res.status(500).json({ message: "Failed to delete maintenance record" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

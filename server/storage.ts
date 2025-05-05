@@ -382,7 +382,8 @@ export class ExcelStorage implements IStorage {
       gstAmount: revenue.gstAmount || null,
       hsn: revenue.hsn || null,
       invoiceNumber: revenue.invoiceNumber || null,
-      currency: revenue.currency || "INR"
+      currency: revenue.currency || "INR",
+      orderId: revenue.orderId || null
     };
     
     revenues.push(newRevenue);
@@ -521,7 +522,12 @@ export class ExcelStorage implements IStorage {
     const newCustomer: Customer = {
       ...customer,
       id: this.customerNextId++,
-      createdAt: new Date()
+      createdAt: new Date(),
+      phone: customer.phone || null,
+      email: customer.email || null,
+      address: customer.address || null,
+      gstin: customer.gstin || null,
+      notes: customer.notes || null
     };
     
     customers.push(newCustomer);
@@ -594,7 +600,10 @@ export class ExcelStorage implements IStorage {
       ...order,
       id: this.orderNextId++,
       orderNumber,
+      customerId: order.customerId,
+      productionUnitId: order.productionUnitId,
       orderDate: order.orderDate || new Date(),
+      deliveryDate: order.deliveryDate || null,
       status: order.status || "pending",
       totalAmount: order.totalAmount || "0",
       paidAmount: order.paidAmount || "0",
@@ -603,6 +612,7 @@ export class ExcelStorage implements IStorage {
       gstAmount: order.gstAmount || null,
       hsn: order.hsn || null,
       invoiceNumber: order.invoiceNumber || null,
+      description: order.description || null,
       currency: order.currency || "INR",
       measurements: order.measurements || null,
       fabricDetails: order.fabricDetails || null,
@@ -729,7 +739,14 @@ export class ExcelStorage implements IStorage {
     const newPayment: SalaryPayment = {
       ...payment,
       id: this.salaryPaymentNextId++,
+      productionUnitId: payment.productionUnitId,
+      amount: payment.amount,
+      employeeName: payment.employeeName,
+      month: payment.month,
+      year: payment.year,
+      employeeId: payment.employeeId || null,
       paymentDate: payment.paymentDate || new Date(),
+      paymentMethod: payment.paymentMethod || null,
       notes: payment.notes || null
     };
     
@@ -800,8 +817,15 @@ export class ExcelStorage implements IStorage {
     const newRecord: MaintenanceRecord = {
       ...record,
       id: this.maintenanceRecordNextId++,
+      productionUnitId: record.productionUnitId,
+      machineId: record.machineId || null,
+      machineName: record.machineName,
+      maintenanceType: record.maintenanceType,
+      description: record.description,
+      cost: record.cost,
       date: record.date || new Date(),
       nextMaintenanceDate: record.nextMaintenanceDate || null,
+      performedBy: record.performedBy || null,
       notes: record.notes || null
     };
     
