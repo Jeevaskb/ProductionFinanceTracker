@@ -1,0 +1,40 @@
+{
+  "appId": "com.stitchingunit.erp",
+  "productName": "Stitching Unit ERP",
+  "directories": {
+    "output": "release"
+  },
+  "files": [
+    "dist/**/*",
+    "electron/**/*",
+    "data/**/*",
+    "package.json"
+  ],
+  "extraResources": [
+    {
+      "from": "data",
+      "to": "data"
+    }
+  ],
+  "win": {
+    "icon": "electron/icons/icon.png",
+    "target": ["nsis"]
+  },
+  "mac": {
+    "icon": "electron/icons/icon.png",
+    "target": ["dmg", "zip"]
+  },
+  "linux": {
+    "icon": "electron/icons/icon.png",
+    "target": ["AppImage", "deb"]
+  },
+  "nsis": {
+    "oneClick": false,
+    "allowToChangeInstallationDirectory": true,
+    "perMachine": false,
+    "createDesktopShortcut": true,
+    "createStartMenuShortcut": true
+  },
+  "publish": null,
+  "asar": true
+}
