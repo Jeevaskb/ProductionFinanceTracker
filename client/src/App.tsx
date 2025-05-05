@@ -9,6 +9,7 @@ import ProductionUnits from "@/pages/production-units";
 import Expenses from "@/pages/expenses";
 import Revenue from "@/pages/revenue";
 import Inventory from "@/pages/inventory";
+import ProfitLoss from "@/pages/profit-loss";
 import Reports from "@/pages/reports";
 import ImportExport from "@/pages/import-export";
 
@@ -28,6 +29,7 @@ function Router() {
             <Route path="/expenses" component={Expenses} />
             <Route path="/revenue" component={Revenue} />
             <Route path="/inventory" component={Inventory} />
+            <Route path="/profit-loss" component={ProfitLoss} />
             <Route path="/reports" component={Reports} />
             <Route path="/import-export" component={ImportExport} />
             <Route component={NotFound} />
