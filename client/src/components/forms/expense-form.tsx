@@ -21,18 +21,22 @@ import {
 } from "@/components/ui/select";
 import { Expense, ProductionUnit } from "@shared/schema";
 import { format } from "date-fns";
+import { GSTCalculationSection } from "./gst-calculation-section";
 
-// Expense categories
+// Expense categories - updated to match GST categories in utils.ts
 const EXPENSE_CATEGORIES = [
   "raw_materials",
-  "labor",
-  "utilities",
-  "maintenance",
   "equipment",
+  "office_supplies",
+  "utilities",
   "rent",
+  "marketing",
+  "transportation",
+  "salaries",
   "insurance",
-  "taxes",
-  "other",
+  "professional_services",
+  "maintenance",
+  "miscellaneous",
 ];
 
 // Extend the schema for validation
@@ -46,6 +50,13 @@ const formSchema = z.object({
     message: "Please enter a valid date",
   }),
   category: z.string().min(1, "Category is required"),
+  // GST related fields
+  baseAmount: z.string().optional(),
+  gstRate: z.string().optional(),
+  gstAmount: z.string().optional(),
+  hsn: z.string().optional(),
+  invoiceNumber: z.string().optional(),
+  currency: z.string().optional(),
 });
 
 type ExpenseFormProps = {
