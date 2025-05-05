@@ -531,6 +531,93 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: `Failed to import data: ${error instanceof Error ? error.message : String(error)}` });
     }
   });
+  
+  app.get("/api/export/:type", async (req: Request, res: Response) => {
+    try {
+      const type = req.params.type;
+      
+      if (!["production_units", "expenses", "revenues", "inventory", "financial_summary"].includes(type)) {
+        return res.status(400).json({ message: "Invalid export type" });
+      }
+      
+      const filePath = await storage.exportToExcel(type);
+      
+      // Create report entry in database
+      const report = await storage.createReport({
+        name: `${type}_export_${new Date().toISOString().split('T')[0]}`,
+        type: type,
+        filePath: filePath
+      });
+      
+      // Send the file
+      res.download(filePath, path.basename(filePath), (err) => {
+        if (err) {
+          console.error("Error sending file:", err);
+          res.status(500).json({ message: "Failed to download exported file" });
+        }
+      });
+    } catch (error) {
+      console.error("Error exporting data:", error);
+      res.status(500).json({ message: `Failed to export data: ${error instanceof Error ? error.message : String(error)}` });
+    }
+  });
+  
+  // Report routes
+  app.get("/api/reports", async (req: Request, res: Response) => {
+    try {
+      const reports = await storage.getAllReports();
+      res.json(reports);
+    } catch (error) {
+      console.error("Error fetching reports:", error);
+      res.status(500).json({ message: "Failed to fetch reports" });
+    }
+  });
+  
+  app.get("/api/reports/:id/download", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const reports = await storage.getAllReports();
+      const report = reports.find(r => r.id === id);
+      
+      if (!report) {
+        return res.status(404).json({ message: "Report not found" });
+      }
+      
+      // Check if file exists
+      try {
+        await fs.access(report.filePath);
+      } catch (error) {
+        return res.status(404).json({ message: "Report file not found" });
+      }
+      
+      // Send the file
+      res.download(report.filePath, path.basename(report.filePath), (err) => {
+        if (err) {
+          console.error("Error sending file:", err);
+          res.status(500).json({ message: "Failed to download report file" });
+        }
+      });
+    } catch (error) {
+      console.error("Error downloading report:", error);
+      res.status(500).json({ message: "Failed to download report" });
+    }
+  });
+  
+  app.delete("/api/reports/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteReport(id);
+      
+      if (!success) {
+        return res.status(404).json({ message: "Report not found" });
+      }
+      
+      res.status(204).end();
+    } catch (error) {
+      console.error("Error deleting report:", error);
+      res.status(500).json({ message: "Failed to delete report" });
+    }
+  });
 
   // Customer routes
   app.get("/api/customers", async (req: Request, res: Response) => {
