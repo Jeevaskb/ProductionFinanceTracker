@@ -57,7 +57,7 @@ export async function readExcelFile(filePathOrBuffer: string | Buffer): Promise<
  * @param sheetName - Name of the worksheet
  * @returns Promise<void>
  */
-export async function writeExcelFile(filePath: string, data: any[][], sheetName: string = 'Sheet1'): Promise<void> {
+export async function writeExcelFile(filePath: string, data: (string | number | null | undefined)[][], sheetName: string = 'Sheet1'): Promise<void> {
   try {
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet(sheetName);

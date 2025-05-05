@@ -1759,7 +1759,7 @@ export class ExcelStorage implements IStorage {
         await fs.access(filePath);
       } catch (error) {
         console.log("Creating revenues.xlsx file...");
-        await this.initializeExcelFile("revenues.xlsx", ["id", "productionUnitId", "description", "amount", "date", "category", "baseAmount", "gstRate", "gstAmount", "hsn", "invoiceNumber", "currency"]);
+        await this.initializeExcelFile("revenues.xlsx", ["id", "productionUnitId", "description", "amount", "date", "category", "baseAmount", "gstRate", "gstAmount", "hsn", "invoiceNumber", "currency", "orderId"]);
         return []; // Return empty array since file was just created
       }
       
@@ -1782,6 +1782,7 @@ export class ExcelStorage implements IStorage {
       const hsnIndex = headers.indexOf("hsn");
       const invoiceNumberIndex = headers.indexOf("invoiceNumber");
       const currencyIndex = headers.indexOf("currency");
+      const orderIdIndex = headers.indexOf("orderId");
       
       const revenues: Revenue[] = [];
       
@@ -1801,7 +1802,8 @@ export class ExcelStorage implements IStorage {
           gstAmount: gstAmountIndex >= 0 ? row[gstAmountIndex] : null,
           hsn: hsnIndex >= 0 ? row[hsnIndex] : null,
           invoiceNumber: invoiceNumberIndex >= 0 ? row[invoiceNumberIndex] : null,
-          currency: currencyIndex >= 0 ? row[currencyIndex] : "INR"
+          currency: currencyIndex >= 0 ? row[currencyIndex] : "INR",
+          orderId: orderIdIndex >= 0 && row[orderIdIndex] ? parseInt(row[orderIdIndex]) : null
         });
         
         // Update the next ID counter
@@ -1820,7 +1822,7 @@ export class ExcelStorage implements IStorage {
   private async writeRevenuesToExcel(revenues: Revenue[]): Promise<void> {
     const filePath = path.join(this.dataDirectory, "revenues.xlsx");
     const headers = ["id", "productionUnitId", "description", "amount", "date", "category",
-                    "baseAmount", "gstRate", "gstAmount", "hsn", "invoiceNumber", "currency"];
+                    "baseAmount", "gstRate", "gstAmount", "hsn", "invoiceNumber", "currency", "orderId"];
     
     const rows = revenues.map(revenue => [
       revenue.id,
@@ -1835,6 +1837,7 @@ export class ExcelStorage implements IStorage {
       revenue.hsn || "",
       revenue.invoiceNumber || "",
       revenue.currency || "INR",
+      revenue.orderId || ""
     ]);
     
     await writeExcelFile(filePath, [headers, ...rows], "Revenues");

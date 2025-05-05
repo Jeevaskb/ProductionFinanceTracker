@@ -108,7 +108,7 @@ export const orders = pgTable("orders", {
   gstAmount: numeric("gst_amount"),
   hsn: text("hsn"),
   invoiceNumber: text("invoice_number"),
-  description: text("description").notNull(),
+  description: text("description"),
   currency: text("currency").default("INR"),
   category: text("category").notNull(),
   measurements: text("measurements"), // JSON string with measurements
