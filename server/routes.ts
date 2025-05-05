@@ -1,4 +1,4 @@
-import type { Express, Request, Response } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { promises as fs } from "fs";
@@ -508,7 +508,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Import/Export
-  app.post("/api/import", upload.single("file"), async (req: Request, res: Response) => {
+  app.post("/api/import", upload.single("file"), async (req: Request & { file?: Express.Multer.File }, res: Response) => {
     try {
       if (!req.file) {
         return res.status(400).json({ message: "No file uploaded" });
@@ -528,7 +528,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ message: `Successfully imported ${importCount} records` });
     } catch (error) {
       console.error("Error importing data:", error);
-      res.status(500).json({ message: `Failed to import data: ${error.message}` });
+      res.status(500).json({ message: `Failed to import data: ${error instanceof Error ? error.message : String(error)}` });
     }
   });
 
