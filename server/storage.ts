@@ -105,6 +105,10 @@ export class ExcelStorage implements IStorage {
   private inventoryNextId: number;
   private reportNextId: number;
   private userNextId: number;
+  private customerNextId: number;
+  private orderNextId: number;
+  private salaryPaymentNextId: number;
+  private maintenanceRecordNextId: number;
 
   constructor() {
     this.dataDirectory = path.resolve(process.cwd(), "data");
@@ -115,6 +119,10 @@ export class ExcelStorage implements IStorage {
     this.inventoryNextId = 1;
     this.reportNextId = 1;
     this.userNextId = 1;
+    this.customerNextId = 1;
+    this.orderNextId = 1;
+    this.salaryPaymentNextId = 1;
+    this.maintenanceRecordNextId = 1;
     
     // Start initialization in the background
     this.initializeStorage().catch(err => {

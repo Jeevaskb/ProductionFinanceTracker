@@ -8,6 +8,11 @@ import {
   Archive,
   FileText,
   FileSpreadsheet,
+  Users,
+  ClipboardList,
+  Scissors,
+  Wrench,
+  Wallet,
   LogOut,
 } from "lucide-react";
 import { UserProfile } from "./user-profile";
@@ -112,6 +117,14 @@ export function Sidebar() {
             >
               Dashboard
             </NavItem>
+            
+            {/* Production Section */}
+            <div className="pt-4 pb-2">
+              <h3 className="px-3 text-xs font-semibold uppercase tracking-wider text-secondary-500">
+                Production
+              </h3>
+            </div>
+            
             <NavItem
               href="/production-units"
               icon={<Factory size={20} />}
@@ -120,6 +133,41 @@ export function Sidebar() {
             >
               Production Units
             </NavItem>
+            
+            <NavItem
+              href="/customers"
+              icon={<Users size={20} />}
+              isActive={location === "/customers"}
+              onClick={closeSidebarOnMobile}
+            >
+              Customers
+            </NavItem>
+            
+            <NavItem
+              href="/orders"
+              icon={<ClipboardList size={20} />}
+              isActive={location === "/orders"}
+              onClick={closeSidebarOnMobile}
+            >
+              Orders
+            </NavItem>
+            
+            <NavItem
+              href="/stitching"
+              icon={<Scissors size={20} />}
+              isActive={location === "/stitching"}
+              onClick={closeSidebarOnMobile}
+            >
+              Stitching
+            </NavItem>
+
+            {/* Finance Section */}
+            <div className="pt-4 pb-2">
+              <h3 className="px-3 text-xs font-semibold uppercase tracking-wider text-secondary-500">
+                Finance
+              </h3>
+            </div>
+            
             <NavItem
               href="/expenses"
               icon={<DollarSign size={20} />}
@@ -128,6 +176,7 @@ export function Sidebar() {
             >
               Expenses
             </NavItem>
+            
             <NavItem
               href="/revenue"
               icon={<LineChart size={20} />}
@@ -136,6 +185,16 @@ export function Sidebar() {
             >
               Revenue
             </NavItem>
+            
+            <NavItem
+              href="/salary"
+              icon={<Wallet size={20} />}
+              isActive={location === "/salary"}
+              onClick={closeSidebarOnMobile}
+            >
+              Salary
+            </NavItem>
+            
             <NavItem
               href="/inventory"
               icon={<Archive size={20} />}
@@ -144,6 +203,23 @@ export function Sidebar() {
             >
               Inventory
             </NavItem>
+            
+            <NavItem
+              href="/maintenance"
+              icon={<Wrench size={20} />}
+              isActive={location === "/maintenance"}
+              onClick={closeSidebarOnMobile}
+            >
+              Maintenance
+            </NavItem>
+
+            {/* Reports Section */}
+            <div className="pt-4 pb-2">
+              <h3 className="px-3 text-xs font-semibold uppercase tracking-wider text-secondary-500">
+                Reports
+              </h3>
+            </div>
+            
             <NavItem
               href="/reports"
               icon={<FileText size={20} />}
@@ -152,6 +228,7 @@ export function Sidebar() {
             >
               Reports
             </NavItem>
+            
             <NavItem
               href="/import-export"
               icon={<FileSpreadsheet size={20} />}
