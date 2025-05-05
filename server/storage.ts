@@ -2062,6 +2062,213 @@ export class ExcelStorage implements IStorage {
     
     await writeExcelFile(filePath, [headers, ...rows], "Users");
   }
+  
+  // Private methods for reading/writing Customers from/to Excel
+  private async readCustomersFromExcel(): Promise<Customer[]> {
+    try {
+      const filePath = path.join(this.dataDirectory, "customers.xlsx");
+      
+      // Make sure directory exists
+      await ensureDirectoryExists(this.dataDirectory);
+      
+      // Check if file exists, create it if not
+      try {
+        await fs.access(filePath);
+      } catch (error) {
+        console.log("Creating customers.xlsx file...");
+        await this.initializeExcelFile("customers.xlsx", ["id", "name", "phone", "email", "address", "gstin", "notes", "createdAt"]);
+        return []; // Return empty array since file was just created
+      }
+      
+      const data = await readExcelFile(filePath);
+      
+      if (!data || data.length <= 1) {
+        return [];
+      }
+      
+      const headers = data[0];
+      const idIndex = headers.indexOf("id");
+      const nameIndex = headers.indexOf("name");
+      const phoneIndex = headers.indexOf("phone");
+      const emailIndex = headers.indexOf("email");
+      const addressIndex = headers.indexOf("address");
+      const gstinIndex = headers.indexOf("gstin");
+      const notesIndex = headers.indexOf("notes");
+      const createdAtIndex = headers.indexOf("createdAt");
+      
+      const customers: Customer[] = [];
+      
+      for (let i = 1; i < data.length; i++) {
+        const row = data[i];
+        const id = parseInt(row[idIndex]);
+        
+        customers.push({
+          id: id,
+          name: row[nameIndex],
+          phone: row[phoneIndex] || null,
+          email: row[emailIndex] || null,
+          address: row[addressIndex] || null,
+          gstin: row[gstinIndex] || null,
+          notes: row[notesIndex] || null,
+          createdAt: row[createdAtIndex] ? new Date(row[createdAtIndex]) : new Date(),
+        });
+        
+        // Update the next ID counter
+        if (id >= this.customerNextId) {
+          this.customerNextId = id + 1;
+        }
+      }
+      
+      return customers;
+    } catch (error) {
+      console.error("Error reading customers from Excel:", error);
+      return [];
+    }
+  }
+
+  private async writeCustomersToExcel(customers: Customer[]): Promise<void> {
+    const filePath = path.join(this.dataDirectory, "customers.xlsx");
+    const headers = ["id", "name", "phone", "email", "address", "gstin", "notes", "createdAt"];
+    
+    const rows = customers.map(customer => [
+      customer.id,
+      customer.name,
+      customer.phone,
+      customer.email,
+      customer.address,
+      customer.gstin,
+      customer.notes,
+      customer.createdAt instanceof Date ? customer.createdAt.toISOString() : customer.createdAt,
+    ]);
+    
+    await writeExcelFile(filePath, [headers, ...rows], "Customers");
+  }
+  
+  // Private methods for reading/writing Orders from/to Excel
+  private async readOrdersFromExcel(): Promise<Order[]> {
+    try {
+      const filePath = path.join(this.dataDirectory, "orders.xlsx");
+      
+      // Make sure directory exists
+      await ensureDirectoryExists(this.dataDirectory);
+      
+      // Check if file exists, create it if not
+      try {
+        await fs.access(filePath);
+      } catch (error) {
+        console.log("Creating orders.xlsx file...");
+        await this.initializeExcelFile("orders.xlsx", [
+          "id", "orderNumber", "customerId", "productionUnitId", 
+          "description", "orderDate", "deliveryDate", "status", 
+          "totalAmount", "paidAmount", "baseAmount", "gstRate", 
+          "gstAmount", "hsn", "invoiceNumber", "currency", 
+          "measurements", "fabricDetails", "specialInstructions"
+        ]);
+        return []; // Return empty array since file was just created
+      }
+      
+      const data = await readExcelFile(filePath);
+      
+      if (!data || data.length <= 1) {
+        return [];
+      }
+      
+      const headers = data[0];
+      const idIndex = headers.indexOf("id");
+      const orderNumberIndex = headers.indexOf("orderNumber");
+      const customerIdIndex = headers.indexOf("customerId");
+      const productionUnitIdIndex = headers.indexOf("productionUnitId");
+      const descriptionIndex = headers.indexOf("description");
+      const orderDateIndex = headers.indexOf("orderDate");
+      const deliveryDateIndex = headers.indexOf("deliveryDate");
+      const statusIndex = headers.indexOf("status");
+      const totalAmountIndex = headers.indexOf("totalAmount");
+      const paidAmountIndex = headers.indexOf("paidAmount");
+      const baseAmountIndex = headers.indexOf("baseAmount");
+      const gstRateIndex = headers.indexOf("gstRate");
+      const gstAmountIndex = headers.indexOf("gstAmount");
+      const hsnIndex = headers.indexOf("hsn");
+      const invoiceNumberIndex = headers.indexOf("invoiceNumber");
+      const currencyIndex = headers.indexOf("currency");
+      const measurementsIndex = headers.indexOf("measurements");
+      const fabricDetailsIndex = headers.indexOf("fabricDetails");
+      const specialInstructionsIndex = headers.indexOf("specialInstructions");
+      
+      const orders: Order[] = [];
+      
+      for (let i = 1; i < data.length; i++) {
+        const row = data[i];
+        const id = parseInt(row[idIndex]);
+        
+        orders.push({
+          id: id,
+          orderNumber: row[orderNumberIndex],
+          customerId: parseInt(row[customerIdIndex]),
+          productionUnitId: parseInt(row[productionUnitIdIndex]),
+          description: row[descriptionIndex] || null,
+          orderDate: row[orderDateIndex] ? new Date(row[orderDateIndex]) : new Date(),
+          deliveryDate: row[deliveryDateIndex] ? new Date(row[deliveryDateIndex]) : null,
+          status: row[statusIndex],
+          totalAmount: row[totalAmountIndex] || "0",
+          paidAmount: row[paidAmountIndex] || "0",
+          baseAmount: row[baseAmountIndex] || null,
+          gstRate: row[gstRateIndex] || null,
+          gstAmount: row[gstAmountIndex] || null,
+          hsn: row[hsnIndex] || null,
+          invoiceNumber: row[invoiceNumberIndex] || null,
+          currency: row[currencyIndex] || "INR",
+          measurements: row[measurementsIndex] || null,
+          fabricDetails: row[fabricDetailsIndex] || null,
+          specialInstructions: row[specialInstructionsIndex] || null,
+        });
+        
+        // Update the next ID counter
+        if (id >= this.orderNextId) {
+          this.orderNextId = id + 1;
+        }
+      }
+      
+      return orders;
+    } catch (error) {
+      console.error("Error reading orders from Excel:", error);
+      return [];
+    }
+  }
+
+  private async writeOrdersToExcel(orders: Order[]): Promise<void> {
+    const filePath = path.join(this.dataDirectory, "orders.xlsx");
+    const headers = [
+      "id", "orderNumber", "customerId", "productionUnitId", 
+      "description", "orderDate", "deliveryDate", "status", 
+      "totalAmount", "paidAmount", "baseAmount", "gstRate", 
+      "gstAmount", "hsn", "invoiceNumber", "currency", 
+      "measurements", "fabricDetails", "specialInstructions"
+    ];
+    
+    const rows = orders.map(order => [
+      order.id,
+      order.orderNumber,
+      order.customerId,
+      order.productionUnitId,
+      order.description,
+      order.orderDate instanceof Date ? order.orderDate.toISOString() : order.orderDate,
+      order.deliveryDate instanceof Date ? order.deliveryDate.toISOString() : order.deliveryDate,
+      order.status,
+      order.totalAmount,
+      order.paidAmount,
+      order.baseAmount,
+      order.gstRate,
+      order.gstAmount,
+      order.hsn,
+      order.invoiceNumber,
+      order.currency,
+      order.measurements,
+      order.fabricDetails,
+      order.specialInstructions,
+    ]);
+    
+    await writeExcelFile(filePath, [headers, ...rows], "Orders");
+  }
 }
 
 export const storage = new ExcelStorage();

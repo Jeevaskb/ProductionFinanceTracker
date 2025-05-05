@@ -10,6 +10,10 @@ import {
   insertExpenseSchema,
   insertRevenueSchema,
   insertInventoryItemSchema,
+  insertCustomerSchema,
+  insertOrderSchema,
+  insertSalaryPaymentSchema,
+  insertMaintenanceRecordSchema,
 } from "@shared/schema";
 import { getSampleExpensesWithGST, getSampleRevenuesWithGST } from "@shared/gst-utils";
 
