@@ -24,17 +24,16 @@ export function StatCard({
   const isPositive = percentChange >= 0;
   const changeTextColor = isPositive ? "text-green-600" : "text-red-500";
 
-  // Format the value if it's a number
+  // Format the value if it's a number (in Indian Rupees)
   const formattedValue =
     typeof value === "number"
       ? value
-          .toLocaleString("en-US", {
+          .toLocaleString("en-IN", {
             style: "currency",
-            currency: "USD",
+            currency: "INR",
             minimumFractionDigits: 2,
             maximumFractionDigits: 2,
           })
-          .replace("$", "$")
       : value;
 
   return (

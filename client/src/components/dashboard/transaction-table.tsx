@@ -28,9 +28,9 @@ export function TransactionTable({ transactions }: TransactionTableProps) {
     return (
       <span className={cn("font-mono font-medium", className)}>
         {prefix}
-        {numAmount.toLocaleString("en-US", {
+        {numAmount.toLocaleString("en-IN", {
           style: "currency",
-          currency: "USD",
+          currency: "INR",
           minimumFractionDigits: 2,
           maximumFractionDigits: 2,
         })}

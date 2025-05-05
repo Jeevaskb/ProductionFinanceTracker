@@ -82,7 +82,7 @@ export function ExpenseForm({
     return format(date, "yyyy-MM-dd");
   };
 
-  // Initialize form with default values or editing values
+  // Initialize form with default values or editing values (with INR as default currency)
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -96,7 +96,7 @@ export function ExpenseForm({
       gstAmount: expense?.gstAmount?.toString() || "",
       hsn: expense?.hsn || "",
       invoiceNumber: expense?.invoiceNumber || "",
-      currency: expense?.currency || "INR",
+      currency: "INR", // Always default to INR
     },
   });
   

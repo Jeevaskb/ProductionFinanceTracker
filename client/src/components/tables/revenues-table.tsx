@@ -31,12 +31,12 @@ export function RevenuesTable({
     return unit?.name || "Unknown Unit";
   };
 
-  // Format currency for amount
+  // Format currency for amount in Indian Rupees
   const formatCurrency = (value: string | number) => {
     const numValue = typeof value === "string" ? parseFloat(value) : value;
-    return new Intl.NumberFormat("en-US", {
+    return new Intl.NumberFormat("en-IN", {
       style: "currency",
-      currency: "USD",
+      currency: "INR",
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     }).format(numValue);
