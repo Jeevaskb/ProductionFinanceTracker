@@ -89,9 +89,10 @@ export async function writeExcelFile(filePath: string, data: (string | number | 
     
     // Format currency columns
     data[0].forEach((header, colIndex) => {
-      if (header.toLowerCase().includes('amount') || 
-          header.toLowerCase().includes('cost') || 
-          header.toLowerCase().includes('price')) {
+      const headerStr = String(header || '');
+      if (headerStr.toLowerCase().includes('amount') || 
+          headerStr.toLowerCase().includes('cost') || 
+          headerStr.toLowerCase().includes('price')) {
         worksheet.getColumn(colIndex + 1).numFmt = '"$"#,##0.00';
       }
     });

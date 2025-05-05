@@ -930,10 +930,10 @@ export class ExcelStorage implements IStorage {
       const filePath = path.join(this.dataDirectory, "salary_payments.xlsx");
       const headers = ["id", "employeeName", "employeeId", "productionUnitId", "amount", "paymentDate", "paymentMethod", "notes", "month", "year"];
       
-      const data = [headers];
+      const data: (string | number | null | undefined)[][] = [headers];
       
       for (const payment of payments) {
-        const row = [
+        const row: (string | number | null | undefined)[] = [
           payment.id,
           payment.employeeName,
           payment.employeeId,
@@ -1007,10 +1007,10 @@ export class ExcelStorage implements IStorage {
       const filePath = path.join(this.dataDirectory, "maintenance_records.xlsx");
       const headers = ["id", "productionUnitId", "machineId", "machineName", "maintenanceType", "description", "cost", "date", "nextMaintenanceDate", "performedBy", "notes"];
       
-      const data = [headers];
+      const data: (string | number | null | undefined)[][] = [headers];
       
       for (const record of records) {
-        const row = [
+        const row: (string | number | null | undefined)[] = [
           record.id,
           record.productionUnitId,
           record.machineId,
@@ -2188,7 +2188,7 @@ export class ExcelStorage implements IStorage {
           "id", "orderNumber", "customerId", "productionUnitId", 
           "description", "orderDate", "deliveryDate", "status", 
           "totalAmount", "paidAmount", "baseAmount", "gstRate", 
-          "gstAmount", "hsn", "invoiceNumber", "currency", 
+          "gstAmount", "hsn", "invoiceNumber", "currency", "category",
           "measurements", "fabricDetails", "specialInstructions"
         ]);
         return []; // Return empty array since file was just created
@@ -2217,6 +2217,7 @@ export class ExcelStorage implements IStorage {
       const hsnIndex = headers.indexOf("hsn");
       const invoiceNumberIndex = headers.indexOf("invoiceNumber");
       const currencyIndex = headers.indexOf("currency");
+      const categoryIndex = headers.indexOf("category");
       const measurementsIndex = headers.indexOf("measurements");
       const fabricDetailsIndex = headers.indexOf("fabricDetails");
       const specialInstructionsIndex = headers.indexOf("specialInstructions");
@@ -2244,6 +2245,7 @@ export class ExcelStorage implements IStorage {
           hsn: row[hsnIndex] || null,
           invoiceNumber: row[invoiceNumberIndex] || null,
           currency: row[currencyIndex] || "INR",
+          category: categoryIndex >= 0 ? row[categoryIndex] : "Stitching",
           measurements: row[measurementsIndex] || null,
           fabricDetails: row[fabricDetailsIndex] || null,
           specialInstructions: row[specialInstructionsIndex] || null,
@@ -2268,7 +2270,7 @@ export class ExcelStorage implements IStorage {
       "id", "orderNumber", "customerId", "productionUnitId", 
       "description", "orderDate", "deliveryDate", "status", 
       "totalAmount", "paidAmount", "baseAmount", "gstRate", 
-      "gstAmount", "hsn", "invoiceNumber", "currency", 
+      "gstAmount", "hsn", "invoiceNumber", "currency", "category",
       "measurements", "fabricDetails", "specialInstructions"
     ];
     
@@ -2289,6 +2291,7 @@ export class ExcelStorage implements IStorage {
       order.hsn,
       order.invoiceNumber,
       order.currency,
+      order.category,
       order.measurements,
       order.fabricDetails,
       order.specialInstructions,
