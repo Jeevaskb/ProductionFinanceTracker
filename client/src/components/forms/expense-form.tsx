@@ -91,8 +91,41 @@ export function ExpenseForm({
       amount: expense?.amount.toString() || "",
       date: formatDateForInput(expense?.date),
       category: expense?.category || "",
+      baseAmount: expense?.baseAmount?.toString() || "",
+      gstRate: expense?.gstRate?.toString() || "",
+      gstAmount: expense?.gstAmount?.toString() || "",
+      hsn: expense?.hsn || "",
+      invoiceNumber: expense?.invoiceNumber || "",
+      currency: expense?.currency || "INR",
     },
   });
+  
+  // Auto-calculate GST when amount or category changes
+  useEffect(() => {
+    const amount = form.watch("amount");
+    const category = form.watch("category");
+    
+    if (amount && category) {
+      const totalAmount = parseFloat(amount);
+      if (!isNaN(totalAmount) && totalAmount > 0) {
+        // Get the appropriate GST rate for this category directly using snake_case
+        const gstRate = expenseCategoryToGSTRate[category] || 18; // Default to 18% if not found
+        
+        // Calculate GST amount and base amount
+        const gstAmount = calculateGSTFromTotal(totalAmount, gstRate);
+        const baseAmount = calculateBaseFromTotal(totalAmount, gstRate);
+        
+        // Get the HSN code if available
+        const hsn = categoryToHSNCode[category] || "";
+        
+        // Update form fields
+        form.setValue("gstRate", gstRate.toString());
+        form.setValue("gstAmount", gstAmount.toString());
+        form.setValue("baseAmount", baseAmount.toString());
+        form.setValue("hsn", hsn);
+      }
+    }
+  }, [form.watch("amount"), form.watch("category")]);
 
   const handleSubmit = (data: z.infer<typeof formSchema>) => {
     onSubmit({
@@ -166,7 +199,7 @@ export function ExpenseForm({
           name="amount"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Amount ($)</FormLabel>
+              <FormLabel>Amount (₹)</FormLabel>
               <FormControl>
                 <Input
                   type="number"
@@ -177,7 +210,7 @@ export function ExpenseForm({
                 />
               </FormControl>
               <FormDescription>
-                Enter the expense amount in dollars.
+                Enter the total expense amount (including GST).
               </FormDescription>
               <FormMessage />
             </FormItem>
@@ -231,6 +264,104 @@ export function ExpenseForm({
             </FormItem>
           )}
         />
+
+        {/* GST Details Section */}
+        <div className="bg-slate-50 p-4 rounded-md border">
+          <h3 className="text-lg font-medium mb-3">GST Details</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="baseAmount"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Base Amount (Excl. GST)</FormLabel>
+                  <FormControl>
+                    <Input readOnly {...field} />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="gstRate"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>GST Rate (%)</FormLabel>
+                  <FormControl>
+                    <Input {...field} />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="gstAmount"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>GST Amount</FormLabel>
+                  <FormControl>
+                    <Input readOnly {...field} />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="hsn"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>HSN Code</FormLabel>
+                  <FormControl>
+                    <Input {...field} />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="invoiceNumber"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Invoice Number</FormLabel>
+                  <FormControl>
+                    <Input placeholder="INV-001" {...field} />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="currency"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Currency</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select currency" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="INR">INR (₹)</SelectItem>
+                      <SelectItem value="USD">USD ($)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FormItem>
+              )}
+            />
+          </div>
+          <p className="text-sm text-gray-500 mt-2">
+            GST amounts are automatically calculated based on the category and total amount.
+          </p>
+        </div>
 
         <div className="flex justify-end space-x-2 pt-4">
           <Button

@@ -23,6 +23,19 @@ export const expenseCategoryToGSTRate: Record<string, number> = {
   "Professional Services": 18,
   "Maintenance": 18,
   "Miscellaneous": 18,
+  // Maps snake_case to title case for our form usage
+  "raw_materials": 5,
+  "equipment": 18,
+  "office_supplies": 12,
+  "utilities": 18,
+  "rent": 18,
+  "marketing": 18,
+  "transportation": 5,
+  "salaries": 0,
+  "insurance": 18,
+  "professional_services": 18,
+  "maintenance": 18,
+  "miscellaneous": 18,
 };
 
 /**
@@ -43,8 +56,29 @@ export const revenueCategoryToGSTRate: Record<string, number> = {
  * Maps common expense categories to their default HSN codes
  */
 export const categoryToHSNCode: Record<string, string> = {
+  // Title case format
   "Raw Materials": "1001",
   "Equipment": "8471",
+  "Office Supplies": "4820",
+  "Utilities": "9987",
+  "Rent": "9972",
+  "Marketing": "9983",
+  "Transportation": "9965",
+  "Professional Services": "9983",
+  "Maintenance": "9987",
+  
+  // Snake case format for our form
+  "raw_materials": "1001",
+  "equipment": "8471",
+  "office_supplies": "4820",
+  "utilities": "9987",
+  "rent": "9972",
+  "marketing": "9983",
+  "transportation": "9965",
+  "professional_services": "9983",
+  "maintenance": "9987",
+  
+  // For revenue categories
   "Product Sales": "8471",
   "Export Sales": "8471",
   "Consulting": "9983",
