@@ -908,7 +908,8 @@ export class ExcelStorage implements IStorage {
     const units = await this.readProductionUnitsFromExcel();
     const unitMap = new Map(units.map(unit => [unit.id, unit.name]));
     
-    const headers = ["ID", "Date", "Description", "Production Unit", "Amount", "Category"];
+    const headers = ["ID", "Date", "Description", "Production Unit", "Amount", "Category", 
+                    "Base Amount", "GST Rate", "GST Amount", "HSN Code", "Invoice Number", "Currency"];
     
     const rows = expenses.map(expense => [
       expense.id,
@@ -917,6 +918,12 @@ export class ExcelStorage implements IStorage {
       unitMap.get(expense.productionUnitId) || "Unknown",
       expense.amount,
       expense.category,
+      expense.baseAmount || "",
+      expense.gstRate || "",
+      expense.gstAmount || "",
+      expense.hsn || "",
+      expense.invoiceNumber || "",
+      expense.currency || "INR",
     ]);
     
     return [headers, ...rows];
@@ -927,7 +934,8 @@ export class ExcelStorage implements IStorage {
     const units = await this.readProductionUnitsFromExcel();
     const unitMap = new Map(units.map(unit => [unit.id, unit.name]));
     
-    const headers = ["ID", "Date", "Description", "Production Unit", "Amount", "Category"];
+    const headers = ["ID", "Date", "Description", "Production Unit", "Amount", "Category",
+                    "Base Amount", "GST Rate", "GST Amount", "HSN Code", "Invoice Number", "Currency"];
     
     const rows = revenues.map(revenue => [
       revenue.id,
@@ -936,6 +944,12 @@ export class ExcelStorage implements IStorage {
       unitMap.get(revenue.productionUnitId) || "Unknown",
       revenue.amount,
       revenue.category,
+      revenue.baseAmount || "",
+      revenue.gstRate || "",
+      revenue.gstAmount || "",
+      revenue.hsn || "",
+      revenue.invoiceNumber || "",
+      revenue.currency || "INR",
     ]);
     
     return [headers, ...rows];
@@ -1132,7 +1146,8 @@ export class ExcelStorage implements IStorage {
 
   private async writeExpensesToExcel(expenses: Expense[]): Promise<void> {
     const filePath = path.join(this.dataDirectory, "expenses.xlsx");
-    const headers = ["id", "productionUnitId", "description", "amount", "date", "category"];
+    const headers = ["id", "productionUnitId", "description", "amount", "date", "category", 
+                    "baseAmount", "gstRate", "gstAmount", "hsn", "invoiceNumber", "currency"];
     
     const rows = expenses.map(expense => [
       expense.id,
@@ -1141,6 +1156,12 @@ export class ExcelStorage implements IStorage {
       expense.amount,
       expense.date instanceof Date ? expense.date.toISOString() : expense.date,
       expense.category,
+      expense.baseAmount || "",
+      expense.gstRate || "",
+      expense.gstAmount || "",
+      expense.hsn || "",
+      expense.invoiceNumber || "",
+      expense.currency || "INR",
     ]);
     
     await writeExcelFile(filePath, [headers, ...rows], "Expenses");
@@ -1175,6 +1196,12 @@ export class ExcelStorage implements IStorage {
       const amountIndex = headers.indexOf("amount");
       const dateIndex = headers.indexOf("date");
       const categoryIndex = headers.indexOf("category");
+      const baseAmountIndex = headers.indexOf("baseAmount");
+      const gstRateIndex = headers.indexOf("gstRate");
+      const gstAmountIndex = headers.indexOf("gstAmount");
+      const hsnIndex = headers.indexOf("hsn");
+      const invoiceNumberIndex = headers.indexOf("invoiceNumber");
+      const currencyIndex = headers.indexOf("currency");
       
       const revenues: Revenue[] = [];
       
@@ -1189,6 +1216,12 @@ export class ExcelStorage implements IStorage {
           amount: row[amountIndex],
           date: row[dateIndex] ? new Date(row[dateIndex]) : new Date(),
           category: row[categoryIndex],
+          baseAmount: baseAmountIndex >= 0 ? row[baseAmountIndex] : null,
+          gstRate: gstRateIndex >= 0 ? row[gstRateIndex] : null,
+          gstAmount: gstAmountIndex >= 0 ? row[gstAmountIndex] : null,
+          hsn: hsnIndex >= 0 ? row[hsnIndex] : null,
+          invoiceNumber: invoiceNumberIndex >= 0 ? row[invoiceNumberIndex] : null,
+          currency: currencyIndex >= 0 ? row[currencyIndex] : "INR"
         });
         
         // Update the next ID counter
@@ -1206,7 +1239,8 @@ export class ExcelStorage implements IStorage {
 
   private async writeRevenuesToExcel(revenues: Revenue[]): Promise<void> {
     const filePath = path.join(this.dataDirectory, "revenues.xlsx");
-    const headers = ["id", "productionUnitId", "description", "amount", "date", "category"];
+    const headers = ["id", "productionUnitId", "description", "amount", "date", "category",
+                    "baseAmount", "gstRate", "gstAmount", "hsn", "invoiceNumber", "currency"];
     
     const rows = revenues.map(revenue => [
       revenue.id,
@@ -1215,6 +1249,12 @@ export class ExcelStorage implements IStorage {
       revenue.amount,
       revenue.date instanceof Date ? revenue.date.toISOString() : revenue.date,
       revenue.category,
+      revenue.baseAmount || "",
+      revenue.gstRate || "",
+      revenue.gstAmount || "",
+      revenue.hsn || "",
+      revenue.invoiceNumber || "",
+      revenue.currency || "INR",
     ]);
     
     await writeExcelFile(filePath, [headers, ...rows], "Revenues");
