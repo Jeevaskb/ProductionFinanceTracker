@@ -505,6 +505,513 @@ export class ExcelStorage implements IStorage {
     await this.writeReportsToExcel(filteredReports);
     return true;
   }
+  
+  // Customer operations
+  async getAllCustomers(): Promise<Customer[]> {
+    return this.readCustomersFromExcel();
+  }
+  
+  async getCustomer(id: number): Promise<Customer | undefined> {
+    const customers = await this.readCustomersFromExcel();
+    return customers.find(customer => customer.id === id);
+  }
+  
+  async createCustomer(customer: InsertCustomer): Promise<Customer> {
+    const customers = await this.readCustomersFromExcel();
+    const newCustomer: Customer = {
+      ...customer,
+      id: this.customerNextId++,
+      createdAt: new Date()
+    };
+    
+    customers.push(newCustomer);
+    await this.writeCustomersToExcel(customers);
+    return newCustomer;
+  }
+  
+  async updateCustomer(id: number, updates: Partial<Customer>): Promise<Customer | undefined> {
+    const customers = await this.readCustomersFromExcel();
+    const customerIndex = customers.findIndex(customer => customer.id === id);
+    
+    if (customerIndex === -1) {
+      return undefined;
+    }
+    
+    const updatedCustomer = { ...customers[customerIndex], ...updates };
+    customers[customerIndex] = updatedCustomer;
+    await this.writeCustomersToExcel(customers);
+    return updatedCustomer;
+  }
+  
+  async deleteCustomer(id: number): Promise<boolean> {
+    // First check if there are any orders for this customer
+    const orders = await this.readOrdersFromExcel();
+    const hasOrders = orders.some(order => order.customerId === id);
+    
+    if (hasOrders) {
+      // Cannot delete customer with existing orders
+      return false;
+    }
+    
+    const customers = await this.readCustomersFromExcel();
+    const filteredCustomers = customers.filter(customer => customer.id !== id);
+    
+    if (filteredCustomers.length === customers.length) {
+      return false;
+    }
+    
+    await this.writeCustomersToExcel(filteredCustomers);
+    return true;
+  }
+  
+  // Order operations
+  async getAllOrders(): Promise<Order[]> {
+    return this.readOrdersFromExcel();
+  }
+  
+  async getOrdersByCustomer(customerId: number): Promise<Order[]> {
+    const orders = await this.readOrdersFromExcel();
+    return orders.filter(order => order.customerId === customerId);
+  }
+  
+  async getOrdersByProductionUnit(productionUnitId: number): Promise<Order[]> {
+    const orders = await this.readOrdersFromExcel();
+    return orders.filter(order => order.productionUnitId === productionUnitId);
+  }
+  
+  async getOrder(id: number): Promise<Order | undefined> {
+    const orders = await this.readOrdersFromExcel();
+    return orders.find(order => order.id === id);
+  }
+  
+  async createOrder(order: InsertOrder): Promise<Order> {
+    const orders = await this.readOrdersFromExcel();
+    
+    // Generate an order number if not provided
+    const orderNumber = order.orderNumber || `ORD-${new Date().getFullYear()}-${this.orderNextId.toString().padStart(4, '0')}`;
+    
+    const newOrder: Order = {
+      ...order,
+      id: this.orderNextId++,
+      orderNumber,
+      orderDate: order.orderDate || new Date(),
+      status: order.status || "pending",
+      totalAmount: order.totalAmount || "0",
+      paidAmount: order.paidAmount || "0",
+      baseAmount: order.baseAmount || null,
+      gstRate: order.gstRate || null,
+      gstAmount: order.gstAmount || null,
+      hsn: order.hsn || null,
+      invoiceNumber: order.invoiceNumber || null,
+      currency: order.currency || "INR",
+      measurements: order.measurements || null,
+      fabricDetails: order.fabricDetails || null,
+      specialInstructions: order.specialInstructions || null
+    };
+    
+    orders.push(newOrder);
+    await this.writeOrdersToExcel(orders);
+    
+    // If this order has an amount and is not a draft, create a corresponding revenue entry
+    if (parseFloat(newOrder.totalAmount) > 0 && newOrder.status !== "draft") {
+      await this.createRevenue({
+        productionUnitId: newOrder.productionUnitId,
+        description: `Order ${newOrder.orderNumber}: ${newOrder.description || 'Stitching services'}`,
+        amount: newOrder.totalAmount,
+        date: newOrder.orderDate,
+        category: "Stitching",
+        baseAmount: newOrder.baseAmount,
+        gstRate: newOrder.gstRate,
+        gstAmount: newOrder.gstAmount,
+        hsn: newOrder.hsn,
+        invoiceNumber: newOrder.invoiceNumber,
+        currency: newOrder.currency,
+        orderId: newOrder.id
+      });
+    }
+    
+    return newOrder;
+  }
+  
+  async updateOrder(id: number, updates: Partial<Order>): Promise<Order | undefined> {
+    const orders = await this.readOrdersFromExcel();
+    const orderIndex = orders.findIndex(order => order.id === id);
+    
+    if (orderIndex === -1) {
+      return undefined;
+    }
+    
+    const oldOrder = orders[orderIndex];
+    const updatedOrder = { ...oldOrder, ...updates };
+    orders[orderIndex] = updatedOrder;
+    await this.writeOrdersToExcel(orders);
+    
+    // If the amount or status changed, update the corresponding revenue entry
+    if ((updates.totalAmount && updates.totalAmount !== oldOrder.totalAmount) || 
+        (updates.status && updates.status !== oldOrder.status)) {
+      
+      // Find the associated revenue entry
+      const revenues = await this.readRevenuesFromExcel();
+      const revenueIndex = revenues.findIndex(revenue => revenue.orderId === id);
+      
+      if (revenueIndex !== -1) {
+        // Update the existing revenue entry
+        const revenue = revenues[revenueIndex];
+        await this.updateRevenue(revenue.id, {
+          description: `Order ${updatedOrder.orderNumber}: ${updatedOrder.description || 'Stitching services'}`,
+          amount: updatedOrder.totalAmount,
+          baseAmount: updatedOrder.baseAmount,
+          gstRate: updatedOrder.gstRate,
+          gstAmount: updatedOrder.gstAmount,
+          hsn: updatedOrder.hsn,
+          invoiceNumber: updatedOrder.invoiceNumber,
+          currency: updatedOrder.currency
+        });
+      } else if (parseFloat(updatedOrder.totalAmount) > 0 && updatedOrder.status !== "draft") {
+        // Create a new revenue entry if none exists and order is not a draft
+        await this.createRevenue({
+          productionUnitId: updatedOrder.productionUnitId,
+          description: `Order ${updatedOrder.orderNumber}: ${updatedOrder.description || 'Stitching services'}`,
+          amount: updatedOrder.totalAmount,
+          date: updatedOrder.orderDate,
+          category: "Stitching",
+          baseAmount: updatedOrder.baseAmount,
+          gstRate: updatedOrder.gstRate,
+          gstAmount: updatedOrder.gstAmount,
+          hsn: updatedOrder.hsn,
+          invoiceNumber: updatedOrder.invoiceNumber,
+          currency: updatedOrder.currency,
+          orderId: updatedOrder.id
+        });
+      }
+    }
+    
+    return updatedOrder;
+  }
+  
+  async deleteOrder(id: number): Promise<boolean> {
+    const orders = await this.readOrdersFromExcel();
+    const orderToDelete = orders.find(order => order.id === id);
+    
+    if (!orderToDelete) {
+      return false;
+    }
+    
+    // Remove the associated revenue entry if exists
+    const revenues = await this.readRevenuesFromExcel();
+    const revenueToDelete = revenues.find(revenue => revenue.orderId === id);
+    if (revenueToDelete) {
+      await this.deleteRevenue(revenueToDelete.id);
+    }
+    
+    const filteredOrders = orders.filter(order => order.id !== id);
+    await this.writeOrdersToExcel(filteredOrders);
+    return true;
+  }
+  
+  // Salary Payment operations
+  async getAllSalaryPayments(): Promise<SalaryPayment[]> {
+    return this.readSalaryPaymentsFromExcel();
+  }
+  
+  async getSalaryPaymentsByProductionUnit(productionUnitId: number): Promise<SalaryPayment[]> {
+    const payments = await this.readSalaryPaymentsFromExcel();
+    return payments.filter(payment => payment.productionUnitId === productionUnitId);
+  }
+  
+  async getSalaryPaymentsByMonth(month: string, year: string): Promise<SalaryPayment[]> {
+    const payments = await this.readSalaryPaymentsFromExcel();
+    return payments.filter(payment => payment.month === month && payment.year === year);
+  }
+  
+  async createSalaryPayment(payment: InsertSalaryPayment): Promise<SalaryPayment> {
+    const payments = await this.readSalaryPaymentsFromExcel();
+    const newPayment: SalaryPayment = {
+      ...payment,
+      id: this.salaryPaymentNextId++,
+      paymentDate: payment.paymentDate || new Date(),
+      notes: payment.notes || null
+    };
+    
+    payments.push(newPayment);
+    await this.writeSalaryPaymentsToExcel(payments);
+    
+    // Create a corresponding expense entry
+    if (parseFloat(newPayment.amount) > 0) {
+      const date = new Date(newPayment.paymentDate);
+      await this.createExpense({
+        productionUnitId: newPayment.productionUnitId,
+        description: `Salary: ${newPayment.employeeName} - ${newPayment.month}/${newPayment.year}`,
+        amount: newPayment.amount,
+        date: date,
+        category: "Salary",
+        currency: "INR"
+      });
+    }
+    
+    return newPayment;
+  }
+  
+  async updateSalaryPayment(id: number, updates: Partial<SalaryPayment>): Promise<SalaryPayment | undefined> {
+    const payments = await this.readSalaryPaymentsFromExcel();
+    const paymentIndex = payments.findIndex(payment => payment.id === id);
+    
+    if (paymentIndex === -1) {
+      return undefined;
+    }
+    
+    const updatedPayment = { ...payments[paymentIndex], ...updates };
+    payments[paymentIndex] = updatedPayment;
+    await this.writeSalaryPaymentsToExcel(payments);
+    
+    // Note: We don't update corresponding expense entries here for simplicity
+    // In a real app, you would need to find and update the associated expense
+    
+    return updatedPayment;
+  }
+  
+  async deleteSalaryPayment(id: number): Promise<boolean> {
+    const payments = await this.readSalaryPaymentsFromExcel();
+    const filteredPayments = payments.filter(payment => payment.id !== id);
+    
+    if (filteredPayments.length === payments.length) {
+      return false;
+    }
+    
+    // Note: We don't delete corresponding expense entries here for simplicity
+    // In a real app, you would need to find and delete the associated expense
+    
+    await this.writeSalaryPaymentsToExcel(filteredPayments);
+    return true;
+  }
+  
+  // Maintenance Record operations
+  async getAllMaintenanceRecords(): Promise<MaintenanceRecord[]> {
+    return this.readMaintenanceRecordsFromExcel();
+  }
+  
+  async getMaintenanceRecordsByProductionUnit(productionUnitId: number): Promise<MaintenanceRecord[]> {
+    const records = await this.readMaintenanceRecordsFromExcel();
+    return records.filter(record => record.productionUnitId === productionUnitId);
+  }
+  
+  async createMaintenanceRecord(record: InsertMaintenanceRecord): Promise<MaintenanceRecord> {
+    const records = await this.readMaintenanceRecordsFromExcel();
+    const newRecord: MaintenanceRecord = {
+      ...record,
+      id: this.maintenanceRecordNextId++,
+      date: record.date || new Date(),
+      nextMaintenanceDate: record.nextMaintenanceDate || null,
+      notes: record.notes || null
+    };
+    
+    records.push(newRecord);
+    await this.writeMaintenanceRecordsToExcel(records);
+    
+    // Create a corresponding expense entry
+    if (parseFloat(newRecord.cost) > 0) {
+      await this.createExpense({
+        productionUnitId: newRecord.productionUnitId,
+        description: `Maintenance: ${newRecord.machineName} - ${newRecord.maintenanceType}`,
+        amount: newRecord.cost,
+        date: new Date(newRecord.date),
+        category: "Maintenance",
+        currency: "INR"
+      });
+    }
+    
+    return newRecord;
+  }
+  
+  async updateMaintenanceRecord(id: number, updates: Partial<MaintenanceRecord>): Promise<MaintenanceRecord | undefined> {
+    const records = await this.readMaintenanceRecordsFromExcel();
+    const recordIndex = records.findIndex(record => record.id === id);
+    
+    if (recordIndex === -1) {
+      return undefined;
+    }
+    
+    const updatedRecord = { ...records[recordIndex], ...updates };
+    records[recordIndex] = updatedRecord;
+    await this.writeMaintenanceRecordsToExcel(records);
+    
+    // Note: We don't update corresponding expense entries here for simplicity
+    // In a real app, you would need to find and update the associated expense
+    
+    return updatedRecord;
+  }
+  
+  async deleteMaintenanceRecord(id: number): Promise<boolean> {
+    const records = await this.readMaintenanceRecordsFromExcel();
+    const filteredRecords = records.filter(record => record.id !== id);
+    
+    if (filteredRecords.length === records.length) {
+      return false;
+    }
+    
+    // Note: We don't delete corresponding expense entries here for simplicity
+    // In a real app, you would need to find and delete the associated expense
+    
+    await this.writeMaintenanceRecordsToExcel(filteredRecords);
+    return true;
+  }
+  
+  // Private methods for reading/writing SalaryPayments from/to Excel
+  private async readSalaryPaymentsFromExcel(): Promise<SalaryPayment[]> {
+    try {
+      const filePath = path.join(this.dataDirectory, "salary_payments.xlsx");
+      const data = await readExcelFile(filePath);
+      
+      if (!data || data.length <= 1) {
+        return [];
+      }
+      
+      const headers = data[0];
+      const payments: SalaryPayment[] = [];
+      
+      for (let i = 1; i < data.length; i++) {
+        const row = data[i];
+        const payment: any = {};
+        
+        for (let j = 0; j < headers.length; j++) {
+          const header = headers[j];
+          let value = row[j];
+          
+          if (header === "id" || header === "productionUnitId" || header === "employeeId") {
+            // If id is higher than current nextId, update nextId
+            const id = parseInt(value);
+            if (header === "id" && id >= this.salaryPaymentNextId) {
+              this.salaryPaymentNextId = id + 1;
+            }
+            payment[header] = id;
+          } else if (header === "paymentDate") {
+            payment[header] = new Date(value);
+          } else {
+            payment[header] = value;
+          }
+        }
+        
+        payments.push(payment);
+      }
+      
+      return payments;
+    } catch (error) {
+      console.error("Error reading salary payments from Excel:", error);
+      return [];
+    }
+  }
+
+  private async writeSalaryPaymentsToExcel(payments: SalaryPayment[]): Promise<void> {
+    try {
+      const filePath = path.join(this.dataDirectory, "salary_payments.xlsx");
+      const headers = ["id", "employeeName", "employeeId", "productionUnitId", "amount", "paymentDate", "paymentMethod", "notes", "month", "year"];
+      
+      const data = [headers];
+      
+      for (const payment of payments) {
+        const row = [
+          payment.id,
+          payment.employeeName,
+          payment.employeeId,
+          payment.productionUnitId,
+          payment.amount,
+          payment.paymentDate instanceof Date 
+            ? payment.paymentDate.toISOString() 
+            : new Date(payment.paymentDate).toISOString(),
+          payment.paymentMethod,
+          payment.notes,
+          payment.month,
+          payment.year
+        ];
+        data.push(row);
+      }
+      
+      await writeExcelFile(filePath, data, "Sheet1");
+    } catch (error) {
+      console.error("Error writing salary payments to Excel:", error);
+      throw error;
+    }
+  }
+  
+  // Private methods for reading/writing MaintenanceRecords from/to Excel
+  private async readMaintenanceRecordsFromExcel(): Promise<MaintenanceRecord[]> {
+    try {
+      const filePath = path.join(this.dataDirectory, "maintenance_records.xlsx");
+      const data = await readExcelFile(filePath);
+      
+      if (!data || data.length <= 1) {
+        return [];
+      }
+      
+      const headers = data[0];
+      const records: MaintenanceRecord[] = [];
+      
+      for (let i = 1; i < data.length; i++) {
+        const row = data[i];
+        const record: any = {};
+        
+        for (let j = 0; j < headers.length; j++) {
+          const header = headers[j];
+          let value = row[j];
+          
+          if (header === "id" || header === "productionUnitId" || header === "machineId") {
+            // If id is higher than current nextId, update nextId
+            const id = parseInt(value);
+            if (header === "id" && id >= this.maintenanceRecordNextId) {
+              this.maintenanceRecordNextId = id + 1;
+            }
+            record[header] = id;
+          } else if (header === "date" || header === "nextMaintenanceDate") {
+            record[header] = value ? new Date(value) : null;
+          } else {
+            record[header] = value;
+          }
+        }
+        
+        records.push(record);
+      }
+      
+      return records;
+    } catch (error) {
+      console.error("Error reading maintenance records from Excel:", error);
+      return [];
+    }
+  }
+
+  private async writeMaintenanceRecordsToExcel(records: MaintenanceRecord[]): Promise<void> {
+    try {
+      const filePath = path.join(this.dataDirectory, "maintenance_records.xlsx");
+      const headers = ["id", "productionUnitId", "machineId", "machineName", "maintenanceType", "description", "cost", "date", "nextMaintenanceDate", "performedBy", "notes"];
+      
+      const data = [headers];
+      
+      for (const record of records) {
+        const row = [
+          record.id,
+          record.productionUnitId,
+          record.machineId,
+          record.machineName,
+          record.maintenanceType,
+          record.description,
+          record.cost,
+          record.date instanceof Date 
+            ? record.date.toISOString() 
+            : new Date(record.date).toISOString(),
+          record.nextMaintenanceDate instanceof Date 
+            ? record.nextMaintenanceDate.toISOString() 
+            : record.nextMaintenanceDate ? new Date(record.nextMaintenanceDate).toISOString() : null,
+          record.performedBy,
+          record.notes
+        ];
+        data.push(row);
+      }
+      
+      await writeExcelFile(filePath, data, "Sheet1");
+    } catch (error) {
+      console.error("Error writing maintenance records to Excel:", error);
+      throw error;
+    }
+  }
 
   // Dashboard data operations
   async getStatSummary(): Promise<StatSummary> {
