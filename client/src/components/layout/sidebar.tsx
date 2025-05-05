@@ -14,6 +14,7 @@ import {
   Wrench,
   Wallet,
   LogOut,
+  TrendingUp,
 } from "lucide-react";
 import { UserProfile } from "./user-profile";
 import { Button } from "@/components/ui/button";
@@ -219,6 +220,15 @@ export function Sidebar() {
                 Reports
               </h3>
             </div>
+            
+            <NavItem
+              href="/profit-loss"
+              icon={<TrendingUp size={20} />}
+              isActive={location === "/profit-loss"}
+              onClick={closeSidebarOnMobile}
+            >
+              Profit & Loss
+            </NavItem>
             
             <NavItem
               href="/reports"
