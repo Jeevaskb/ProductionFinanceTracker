@@ -3,6 +3,10 @@ import {
   Expense, InsertExpense,
   Revenue, InsertRevenue,
   InventoryItem, InsertInventoryItem,
+  Customer, InsertCustomer,
+  Order, InsertOrder,
+  SalaryPayment, InsertSalaryPayment,
+  MaintenanceRecord, InsertMaintenanceRecord,
   Report, InsertReport,
   User, InsertUser,
   StatSummary, Transaction, ProfitLossPeriod, CostTrend
@@ -44,6 +48,37 @@ export interface IStorage {
   createInventoryItem(item: InsertInventoryItem): Promise<InventoryItem>;
   updateInventoryItem(id: number, updates: Partial<InventoryItem>): Promise<InventoryItem | undefined>;
   deleteInventoryItem(id: number): Promise<boolean>;
+  
+  // Customer operations
+  getAllCustomers(): Promise<Customer[]>;
+  getCustomer(id: number): Promise<Customer | undefined>;
+  createCustomer(customer: InsertCustomer): Promise<Customer>;
+  updateCustomer(id: number, updates: Partial<Customer>): Promise<Customer | undefined>;
+  deleteCustomer(id: number): Promise<boolean>;
+  
+  // Order operations
+  getAllOrders(): Promise<Order[]>;
+  getOrdersByCustomer(customerId: number): Promise<Order[]>;
+  getOrdersByProductionUnit(productionUnitId: number): Promise<Order[]>;
+  getOrder(id: number): Promise<Order | undefined>;
+  createOrder(order: InsertOrder): Promise<Order>;
+  updateOrder(id: number, updates: Partial<Order>): Promise<Order | undefined>;
+  deleteOrder(id: number): Promise<boolean>;
+  
+  // Salary Payment operations
+  getAllSalaryPayments(): Promise<SalaryPayment[]>;
+  getSalaryPaymentsByProductionUnit(productionUnitId: number): Promise<SalaryPayment[]>;
+  getSalaryPaymentsByMonth(month: string, year: string): Promise<SalaryPayment[]>;
+  createSalaryPayment(payment: InsertSalaryPayment): Promise<SalaryPayment>;
+  updateSalaryPayment(id: number, updates: Partial<SalaryPayment>): Promise<SalaryPayment | undefined>;
+  deleteSalaryPayment(id: number): Promise<boolean>;
+  
+  // Maintenance Record operations
+  getAllMaintenanceRecords(): Promise<MaintenanceRecord[]>;
+  getMaintenanceRecordsByProductionUnit(productionUnitId: number): Promise<MaintenanceRecord[]>;
+  createMaintenanceRecord(record: InsertMaintenanceRecord): Promise<MaintenanceRecord>;
+  updateMaintenanceRecord(id: number, updates: Partial<MaintenanceRecord>): Promise<MaintenanceRecord | undefined>;
+  deleteMaintenanceRecord(id: number): Promise<boolean>;
 
   // Report operations
   getAllReports(): Promise<Report[]>;
@@ -102,11 +137,17 @@ export class ExcelStorage implements IStorage {
       
       // Initialize all required Excel files if they don't exist
       await this.initializeExcelFile("production_units.xlsx", ["id", "name", "location", "status", "costToDate", "createdAt"]);
-      await this.initializeExcelFile("expenses.xlsx", ["id", "productionUnitId", "description", "amount", "date", "category"]);
-      await this.initializeExcelFile("revenues.xlsx", ["id", "productionUnitId", "description", "amount", "date", "category"]);
+      await this.initializeExcelFile("expenses.xlsx", ["id", "productionUnitId", "description", "amount", "date", "category", "baseAmount", "gstRate", "gstAmount", "hsn", "invoiceNumber", "currency"]);
+      await this.initializeExcelFile("revenues.xlsx", ["id", "productionUnitId", "description", "amount", "date", "category", "baseAmount", "gstRate", "gstAmount", "hsn", "invoiceNumber", "currency", "orderId"]);
       await this.initializeExcelFile("inventory.xlsx", ["id", "name", "description", "quantity", "unitCost", "productionUnitId", "createdAt"]);
       await this.initializeExcelFile("reports.xlsx", ["id", "name", "type", "generatedAt", "filePath"]);
       await this.initializeExcelFile("users.xlsx", ["id", "username", "password", "name", "role"]);
+      
+      // Initialize new Excel files for stitching unit
+      await this.initializeExcelFile("customers.xlsx", ["id", "name", "phone", "email", "address", "gstin", "createdAt", "notes"]);
+      await this.initializeExcelFile("orders.xlsx", ["id", "orderNumber", "customerId", "productionUnitId", "orderDate", "deliveryDate", "status", "totalAmount", "paidAmount", "baseAmount", "gstRate", "gstAmount", "hsn", "invoiceNumber", "description", "currency", "category", "measurements", "fabricDetails", "specialInstructions"]);
+      await this.initializeExcelFile("salary_payments.xlsx", ["id", "employeeName", "employeeId", "productionUnitId", "amount", "paymentDate", "paymentMethod", "notes", "month", "year"]);
+      await this.initializeExcelFile("maintenance_records.xlsx", ["id", "productionUnitId", "machineId", "machineName", "maintenanceType", "description", "cost", "date", "nextMaintenanceDate", "performedBy", "notes"]);
     } catch (error) {
       console.error("Error initializing storage:", error);
     }

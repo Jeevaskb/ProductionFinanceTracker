@@ -43,30 +43,57 @@ export interface ExpenseCategory {
 }
 
 export const expenseCategories: ExpenseCategory[] = [
-  { name: 'Raw Materials', defaultRate: GSTRates.FIVE, defaultHSN: '1001' },
-  { name: 'Equipment', defaultRate: GSTRates.EIGHTEEN, defaultHSN: '8471' },
-  { name: 'Office Supplies', defaultRate: GSTRates.TWELVE },
-  { name: 'Utilities', defaultRate: GSTRates.EIGHTEEN },
-  { name: 'Rent', defaultRate: GSTRates.EIGHTEEN },
-  { name: 'Marketing', defaultRate: GSTRates.EIGHTEEN },
-  { name: 'Transportation', defaultRate: GSTRates.FIVE },
+  // Stitching unit specific materials
+  { name: 'Fabric', defaultRate: GSTRates.FIVE, defaultHSN: '5208' },
+  { name: 'Thread', defaultRate: GSTRates.FIVE, defaultHSN: '5401' },
+  { name: 'Buttons', defaultRate: GSTRates.TWELVE, defaultHSN: '9606' },
+  { name: 'Zippers', defaultRate: GSTRates.TWELVE, defaultHSN: '9607' },
+  { name: 'Elastic', defaultRate: GSTRates.FIVE, defaultHSN: '5604' },
+  { name: 'Lace', defaultRate: GSTRates.FIVE, defaultHSN: '5804' },
+  { name: 'Labels', defaultRate: GSTRates.TWELVE, defaultHSN: '5807' },
+  { name: 'Packaging', defaultRate: GSTRates.EIGHTEEN, defaultHSN: '4819' },
+  
+  // Equipment and operations
+  { name: 'Sewing Machines', defaultRate: GSTRates.EIGHTEEN, defaultHSN: '8452' },
+  { name: 'Cutting Tools', defaultRate: GSTRates.EIGHTEEN, defaultHSN: '8208' },
+  { name: 'Pressing Equipment', defaultRate: GSTRates.EIGHTEEN, defaultHSN: '8451' },
+  { name: 'Machine Parts', defaultRate: GSTRates.EIGHTEEN, defaultHSN: '8452' },
+  { name: 'Machine Maintenance', defaultRate: GSTRates.EIGHTEEN, defaultHSN: '8452' },
+  
+  // Standard business expenses
   { name: 'Salaries', defaultRate: GSTRates.ZERO }, // Salaries are not subject to GST
+  { name: 'Contractor Payments', defaultRate: GSTRates.EIGHTEEN },
+  { name: 'Rent', defaultRate: GSTRates.EIGHTEEN },
+  { name: 'Electricity', defaultRate: GSTRates.EIGHTEEN },
+  { name: 'Water', defaultRate: GSTRates.FIVE },
+  { name: 'Transportation', defaultRate: GSTRates.FIVE },
+  { name: 'Office Supplies', defaultRate: GSTRates.TWELVE },
   { name: 'Insurance', defaultRate: GSTRates.EIGHTEEN },
   { name: 'Professional Services', defaultRate: GSTRates.EIGHTEEN },
-  { name: 'Maintenance', defaultRate: GSTRates.EIGHTEEN },
+  { name: 'Marketing', defaultRate: GSTRates.EIGHTEEN },
   { name: 'Miscellaneous', defaultRate: GSTRates.EIGHTEEN },
 ];
 
-// Common revenue categories with default GST rates
+// Stitching unit revenue categories with default GST rates
 export const revenueCategories: ExpenseCategory[] = [
-  { name: 'Product Sales', defaultRate: GSTRates.EIGHTEEN, defaultHSN: '8471' },
-  { name: 'Service Fees', defaultRate: GSTRates.EIGHTEEN },
-  { name: 'Consulting', defaultRate: GSTRates.EIGHTEEN },
-  { name: 'Licensing', defaultRate: GSTRates.EIGHTEEN },
-  { name: 'Royalties', defaultRate: GSTRates.EIGHTEEN },
-  { name: 'Commission', defaultRate: GSTRates.EIGHTEEN },
-  { name: 'Interest', defaultRate: GSTRates.ZERO }, // Interest income often exempt from GST
-  { name: 'Export Sales', defaultRate: GSTRates.ZERO }, // Exports are typically zero-rated
+  // Garment/product categories
+  { name: 'Ready-made Garments', defaultRate: GSTRates.FIVE, defaultHSN: '6101' },
+  { name: 'Custom Tailoring', defaultRate: GSTRates.FIVE, defaultHSN: '6101' },
+  { name: 'Embroidery Services', defaultRate: GSTRates.FIVE, defaultHSN: '5810' },
+  { name: 'Alteration Services', defaultRate: GSTRates.FIVE, defaultHSN: '9988' },
+  { name: 'Industrial Stitching', defaultRate: GSTRates.FIVE, defaultHSN: '6307' },
+  { name: 'Fabric Printing', defaultRate: GSTRates.TWELVE, defaultHSN: '5801' },
+  { name: 'Pattern Making', defaultRate: GSTRates.EIGHTEEN },
+  { name: 'Uniform Orders', defaultRate: GSTRates.FIVE, defaultHSN: '6103' },
+  { name: 'Bulk Orders', defaultRate: GSTRates.FIVE, defaultHSN: '6101' },
+  
+  // Other income streams
+  { name: 'Design Services', defaultRate: GSTRates.EIGHTEEN },
+  { name: 'Machine Rental', defaultRate: GSTRates.EIGHTEEN },
+  { name: 'Material Resale', defaultRate: GSTRates.FIVE, defaultHSN: '5208' },
+  { name: 'Consultation Fees', defaultRate: GSTRates.EIGHTEEN },
+  { name: 'Training Fees', defaultRate: GSTRates.EIGHTEEN },
+  { name: 'Export Sales', defaultRate: GSTRates.ZERO, defaultHSN: '6101' }, // Exports are typically zero-rated
 ];
 
 /**
@@ -173,54 +200,80 @@ export function formatIndianCurrency(amount: number | string): string {
 export function getSampleExpensesWithGST() {
   return [
     {
-      description: "Office Supplies Purchase",
+      description: "Cotton Fabric Purchase",
+      amount: "21000",
+      baseAmount: "20000",
+      gstRate: "5",
+      gstAmount: "1000",
+      date: new Date(),
+      category: "Fabric",
+      productionUnitId: 1,
+      hsn: "5208",
+      invoiceNumber: "INV-001",
+      currency: "INR"
+    },
+    {
+      description: "Thread and Buttons",
+      amount: "5600",
+      baseAmount: "5000",
+      gstRate: "12",
+      gstAmount: "600",
+      date: new Date(),
+      category: "Buttons",
+      productionUnitId: 1,
+      hsn: "9606",
+      invoiceNumber: "INV-002",
+      currency: "INR"
+    },
+    {
+      description: "Sewing Machine Repair",
+      amount: "3540",
+      baseAmount: "3000",
+      gstRate: "18",
+      gstAmount: "540",
+      date: new Date(),
+      category: "Machine Maintenance",
+      productionUnitId: 1,
+      hsn: "8452",
+      invoiceNumber: "INV-003",
+      currency: "INR"
+    },
+    {
+      description: "Monthly Salary - Tailors",
+      amount: "25000",
+      baseAmount: "25000",
+      gstRate: "0",
+      gstAmount: "0",
+      date: new Date(),
+      category: "Salaries",
+      productionUnitId: 1,
+      hsn: "",
+      invoiceNumber: "SAL-001",
+      currency: "INR"
+    },
+    {
+      description: "Electricity Bill",
+      amount: "8260",
+      baseAmount: "7000",
+      gstRate: "18",
+      gstAmount: "1260",
+      date: new Date(),
+      category: "Electricity",
+      productionUnitId: 1,
+      hsn: "",
+      invoiceNumber: "UTIL-001",
+      currency: "INR"
+    },
+    {
+      description: "Packaging Materials",
       amount: "5900",
       baseAmount: "5000",
       gstRate: "18",
       gstAmount: "900",
       date: new Date(),
-      category: "Office Supplies",
+      category: "Packaging",
       productionUnitId: 1,
-      hsn: "4901",
-      invoiceNumber: "INV-001",
-      currency: "INR"
-    },
-    {
-      description: "Raw Material Purchase",
-      amount: "10500",
-      baseAmount: "10000",
-      gstRate: "5",
-      gstAmount: "500",
-      date: new Date(),
-      category: "Raw Materials",
-      productionUnitId: 1,
-      hsn: "1001",
-      invoiceNumber: "INV-002",
-      currency: "INR"
-    },
-    {
-      description: "Equipment Maintenance",
-      amount: "11800",
-      baseAmount: "10000",
-      gstRate: "18",
-      gstAmount: "1800",
-      date: new Date(),
-      category: "Maintenance",
-      productionUnitId: 1,
-      hsn: "8471",
-      invoiceNumber: "INV-003",
-      currency: "INR"
-    },
-    {
-      description: "Transportation Services",
-      amount: "5250",
-      baseAmount: "5000",
-      gstRate: "5",
-      gstAmount: "250",
-      date: new Date(),
-      category: "Transportation",
-      productionUnitId: 1,
-      hsn: "9965",
+      hsn: "4819",
       invoiceNumber: "INV-004",
       currency: "INR"
     }
@@ -234,33 +287,72 @@ export function getSampleExpensesWithGST() {
 export function getSampleRevenuesWithGST() {
   return [
     {
-      description: "Product Sales",
-      amount: "118000",
+      description: "Uniform Order - Corporate",
+      amount: "105000",
       baseAmount: "100000",
-      gstRate: "18",
-      gstAmount: "18000",
+      gstRate: "5",
+      gstAmount: "5000",
       date: new Date(),
-      category: "Product Sales",
+      category: "Uniform Orders",
       productionUnitId: 1,
-      hsn: "8471",
+      hsn: "6103",
       invoiceNumber: "SINV-001",
       currency: "INR"
     },
     {
-      description: "Consulting Services",
-      amount: "59000",
-      baseAmount: "50000",
-      gstRate: "18",
-      gstAmount: "9000",
+      description: "Wedding Dress Alterations",
+      amount: "15750",
+      baseAmount: "15000",
+      gstRate: "5",
+      gstAmount: "750",
       date: new Date(),
-      category: "Consulting",
+      category: "Alteration Services",
       productionUnitId: 1,
-      hsn: "9983",
+      hsn: "9988",
       invoiceNumber: "SINV-002",
       currency: "INR"
     },
     {
-      description: "Export Sales",
+      description: "Custom Embroidery Work",
+      amount: "26250",
+      baseAmount: "25000",
+      gstRate: "5",
+      gstAmount: "1250",
+      date: new Date(),
+      category: "Embroidery Services",
+      productionUnitId: 1,
+      hsn: "5810",
+      invoiceNumber: "SINV-003",
+      currency: "INR"
+    },
+    {
+      description: "Bulk Order - T-shirts",
+      amount: "52500",
+      baseAmount: "50000",
+      gstRate: "5",
+      gstAmount: "2500",
+      date: new Date(),
+      category: "Bulk Orders",
+      productionUnitId: 1,
+      hsn: "6101",
+      invoiceNumber: "SINV-004",
+      currency: "INR"
+    },
+    {
+      description: "Pattern Making Services",
+      amount: "23600",
+      baseAmount: "20000",
+      gstRate: "18",
+      gstAmount: "3600",
+      date: new Date(),
+      category: "Pattern Making",
+      productionUnitId: 1,
+      hsn: "",
+      invoiceNumber: "SINV-005",
+      currency: "INR"
+    },
+    {
+      description: "Export Order - Garments",
       amount: "200000",
       baseAmount: "200000",
       gstRate: "0",
@@ -268,8 +360,8 @@ export function getSampleRevenuesWithGST() {
       date: new Date(),
       category: "Export Sales",
       productionUnitId: 1,
-      hsn: "8471",
-      invoiceNumber: "SINV-003",
+      hsn: "6101",
+      invoiceNumber: "SINV-006",
       currency: "INR"
     }
   ];
