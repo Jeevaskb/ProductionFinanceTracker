@@ -21,7 +21,8 @@ import {
 } from "@/components/ui/select";
 import { Expense, ProductionUnit } from "@shared/schema";
 import { format } from "date-fns";
-import { GSTCalculationSection } from "./gst-calculation-section";
+import { useEffect } from "react";
+import { calculateBaseFromTotal, calculateGSTFromTotal, expenseCategoryToGSTRate, categoryToHSNCode } from "@/lib/utils";
 
 // Expense categories - updated to match GST categories in utils.ts
 const EXPENSE_CATEGORIES = [
@@ -97,9 +98,15 @@ export function ExpenseForm({
     onSubmit({
       productionUnitId: parseInt(data.productionUnitId),
       description: data.description,
-      amount: parseFloat(data.amount),
+      amount: data.amount, // Keep as string to match the schema
       date: new Date(data.date),
       category: data.category,
+      baseAmount: data.baseAmount || null,
+      gstRate: data.gstRate || null,
+      gstAmount: data.gstAmount || null,
+      hsn: data.hsn || null,
+      invoiceNumber: data.invoiceNumber || null,
+      currency: data.currency || "INR",
     });
   };
 
