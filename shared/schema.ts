@@ -24,8 +24,14 @@ export const expenses = pgTable("expenses", {
   productionUnitId: integer("production_unit_id").notNull(),
   description: text("description").notNull(),
   amount: numeric("amount").notNull(),
+  baseAmount: numeric("base_amount"),
+  gstRate: numeric("gst_rate"),
+  gstAmount: numeric("gst_amount"),
+  hsn: text("hsn"),
+  invoiceNumber: text("invoice_number"),
   date: timestamp("date").defaultNow().notNull(),
   category: text("category").notNull(),
+  currency: text("currency").default("INR"),
 });
 
 export const insertExpenseSchema = createInsertSchema(expenses).omit({
@@ -38,8 +44,14 @@ export const revenues = pgTable("revenues", {
   productionUnitId: integer("production_unit_id").notNull(),
   description: text("description").notNull(),
   amount: numeric("amount").notNull(),
+  baseAmount: numeric("base_amount"),
+  gstRate: numeric("gst_rate"),
+  gstAmount: numeric("gst_amount"),
+  hsn: text("hsn"),
+  invoiceNumber: text("invoice_number"),
   date: timestamp("date").defaultNow().notNull(),
   category: text("category").notNull(),
+  currency: text("currency").default("INR"),
 });
 
 export const insertRevenueSchema = createInsertSchema(revenues).omit({

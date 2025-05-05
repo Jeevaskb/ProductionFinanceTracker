@@ -238,6 +238,12 @@ export class ExcelStorage implements IStorage {
       ...expense,
       id: this.expenseNextId++,
       date: expense.date || new Date(), // Ensure date is not undefined
+      baseAmount: expense.baseAmount || null,
+      gstRate: expense.gstRate || null,
+      gstAmount: expense.gstAmount || null,
+      hsn: expense.hsn || null,
+      invoiceNumber: expense.invoiceNumber || null,
+      currency: expense.currency || "INR"
     };
     
     expenses.push(newExpense);
@@ -322,6 +328,12 @@ export class ExcelStorage implements IStorage {
       ...revenue,
       id: this.revenueNextId++,
       date: revenue.date || new Date(), // Ensure date is not undefined
+      baseAmount: revenue.baseAmount || null,
+      gstRate: revenue.gstRate || null,
+      gstAmount: revenue.gstAmount || null,
+      hsn: revenue.hsn || null,
+      invoiceNumber: revenue.invoiceNumber || null,
+      currency: revenue.currency || "INR"
     };
     
     revenues.push(newRevenue);
