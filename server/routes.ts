@@ -11,6 +11,7 @@ import {
   insertRevenueSchema,
   insertInventoryItemSchema,
 } from "@shared/schema";
+import { getSampleExpensesWithGST, getSampleRevenuesWithGST } from "@shared/gst-utils";
 
 // Set up multer for file uploads
 const upload = multer({
@@ -447,6 +448,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Sample GST Data
+  app.post("/api/sample-gst-data", async (req: Request, res: Response) => {
+    try {
+      // Check if a production unit exists
+      const units = await storage.getAllProductionUnits();
+      let productionUnitId = 1;
+      
+      // If no production unit exists, create one
+      if (units.length === 0) {
+        const newUnit = await storage.createProductionUnit({
+          name: "Sample Production Unit",
+          location: "Delhi, India",
+          status: "active"
+        });
+        productionUnitId = newUnit.id;
+      } else {
+        productionUnitId = units[0].id;
+      }
+      
+      // Add sample GST expenses
+      const sampleExpenses = getSampleExpensesWithGST();
+      let expensesAdded = 0;
+      
+      for (const expense of sampleExpenses) {
+        await storage.createExpense({
+          ...expense,
+          productionUnitId
+        });
+        expensesAdded++;
+      }
+      
+      // Add sample GST revenues
+      const sampleRevenues = getSampleRevenuesWithGST();
+      let revenuesAdded = 0;
+      
+      for (const revenue of sampleRevenues) {
+        await storage.createRevenue({
+          ...revenue,
+          productionUnitId
+        });
+        revenuesAdded++;
+      }
+      
+      res.json({
+        message: "Sample GST data added successfully",
+        expensesAdded,
+        revenuesAdded,
+        productionUnitId
+      });
+    } catch (error) {
+      console.error("Error adding sample GST data:", error);
+      res.status(500).json({ message: "Failed to add sample GST data" });
+    }
+  });
+  
   // Import/Export
   app.post("/api/import", upload.single("file"), async (req: Request, res: Response) => {
     try {

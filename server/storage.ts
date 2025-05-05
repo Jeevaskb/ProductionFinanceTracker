@@ -742,6 +742,12 @@ export class ExcelStorage implements IStorage {
     const amountIndex = headers.indexOf("amount");
     const dateIndex = headers.indexOf("date");
     const categoryIndex = headers.indexOf("category");
+    const baseAmountIndex = headers.indexOf("baseAmount");
+    const gstRateIndex = headers.indexOf("gstRate");
+    const gstAmountIndex = headers.indexOf("gstAmount");
+    const hsnIndex = headers.indexOf("hsn");
+    const invoiceNumberIndex = headers.indexOf("invoiceNumber");
+    const currencyIndex = headers.indexOf("currency");
     
     for (const row of rows) {
       const expense: InsertExpense = {
@@ -750,6 +756,12 @@ export class ExcelStorage implements IStorage {
         amount: row[amountIndex].toString(),
         date: dateIndex >= 0 && row[dateIndex] ? new Date(row[dateIndex]) : new Date(),
         category: row[categoryIndex],
+        baseAmount: baseAmountIndex >= 0 && row[baseAmountIndex] ? row[baseAmountIndex].toString() : null,
+        gstRate: gstRateIndex >= 0 && row[gstRateIndex] ? row[gstRateIndex].toString() : null,
+        gstAmount: gstAmountIndex >= 0 && row[gstAmountIndex] ? row[gstAmountIndex].toString() : null,
+        hsn: hsnIndex >= 0 && row[hsnIndex] ? row[hsnIndex] : null,
+        invoiceNumber: invoiceNumberIndex >= 0 && row[invoiceNumberIndex] ? row[invoiceNumberIndex] : null,
+        currency: currencyIndex >= 0 && row[currencyIndex] ? row[currencyIndex] : "INR"
       };
       
       await this.createExpense(expense);
@@ -769,6 +781,12 @@ export class ExcelStorage implements IStorage {
     const amountIndex = headers.indexOf("amount");
     const dateIndex = headers.indexOf("date");
     const categoryIndex = headers.indexOf("category");
+    const baseAmountIndex = headers.indexOf("baseAmount");
+    const gstRateIndex = headers.indexOf("gstRate");
+    const gstAmountIndex = headers.indexOf("gstAmount");
+    const hsnIndex = headers.indexOf("hsn");
+    const invoiceNumberIndex = headers.indexOf("invoiceNumber");
+    const currencyIndex = headers.indexOf("currency");
     
     for (const row of rows) {
       const revenue: InsertRevenue = {
@@ -777,6 +795,12 @@ export class ExcelStorage implements IStorage {
         amount: row[amountIndex].toString(),
         date: dateIndex >= 0 && row[dateIndex] ? new Date(row[dateIndex]) : new Date(),
         category: row[categoryIndex],
+        baseAmount: baseAmountIndex >= 0 && row[baseAmountIndex] ? row[baseAmountIndex].toString() : null,
+        gstRate: gstRateIndex >= 0 && row[gstRateIndex] ? row[gstRateIndex].toString() : null,
+        gstAmount: gstAmountIndex >= 0 && row[gstAmountIndex] ? row[gstAmountIndex].toString() : null,
+        hsn: hsnIndex >= 0 && row[hsnIndex] ? row[hsnIndex] : null,
+        invoiceNumber: invoiceNumberIndex >= 0 && row[invoiceNumberIndex] ? row[invoiceNumberIndex] : null,
+        currency: currencyIndex >= 0 && row[currencyIndex] ? row[currencyIndex] : "INR"
       };
       
       await this.createRevenue(revenue);
@@ -1048,7 +1072,7 @@ export class ExcelStorage implements IStorage {
         await fs.access(filePath);
       } catch (error) {
         console.log("Creating expenses.xlsx file...");
-        await this.initializeExcelFile("expenses.xlsx", ["id", "productionUnitId", "description", "amount", "date", "category"]);
+        await this.initializeExcelFile("expenses.xlsx", ["id", "productionUnitId", "description", "amount", "date", "category", "baseAmount", "gstRate", "gstAmount", "hsn", "invoiceNumber", "currency"]);
         return []; // Return empty array since file was just created
       }
       
@@ -1065,6 +1089,12 @@ export class ExcelStorage implements IStorage {
       const amountIndex = headers.indexOf("amount");
       const dateIndex = headers.indexOf("date");
       const categoryIndex = headers.indexOf("category");
+      const baseAmountIndex = headers.indexOf("baseAmount");
+      const gstRateIndex = headers.indexOf("gstRate");
+      const gstAmountIndex = headers.indexOf("gstAmount");
+      const hsnIndex = headers.indexOf("hsn");
+      const invoiceNumberIndex = headers.indexOf("invoiceNumber");
+      const currencyIndex = headers.indexOf("currency");
       
       const expenses: Expense[] = [];
       
@@ -1079,6 +1109,12 @@ export class ExcelStorage implements IStorage {
           amount: row[amountIndex],
           date: row[dateIndex] ? new Date(row[dateIndex]) : new Date(),
           category: row[categoryIndex],
+          baseAmount: baseAmountIndex >= 0 ? row[baseAmountIndex] : null,
+          gstRate: gstRateIndex >= 0 ? row[gstRateIndex] : null,
+          gstAmount: gstAmountIndex >= 0 ? row[gstAmountIndex] : null,
+          hsn: hsnIndex >= 0 ? row[hsnIndex] : null,
+          invoiceNumber: invoiceNumberIndex >= 0 ? row[invoiceNumberIndex] : null,
+          currency: currencyIndex >= 0 ? row[currencyIndex] : "INR"
         });
         
         // Update the next ID counter
@@ -1122,7 +1158,7 @@ export class ExcelStorage implements IStorage {
         await fs.access(filePath);
       } catch (error) {
         console.log("Creating revenues.xlsx file...");
-        await this.initializeExcelFile("revenues.xlsx", ["id", "productionUnitId", "description", "amount", "date", "category"]);
+        await this.initializeExcelFile("revenues.xlsx", ["id", "productionUnitId", "description", "amount", "date", "category", "baseAmount", "gstRate", "gstAmount", "hsn", "invoiceNumber", "currency"]);
         return []; // Return empty array since file was just created
       }
       
